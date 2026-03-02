@@ -23,7 +23,7 @@
             The spring-boot version should match the one managed by https://mvnrepository.com/artifact/tech.jhipster/jhipster-dependencies/${jhipster-dependencies.version}
         -->
         <maven.version>3.2.5</maven.version>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <node.version>v24.11.1</node.version>
         <npm.version>11.6.4</npm.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -289,6 +289,11 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.firebase</groupId>
+            <artifactId>firebase-admin</artifactId>
+            <version>9.1.1</version>
         </dependency>
     </dependencies>
 
