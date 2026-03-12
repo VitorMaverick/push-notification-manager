@@ -8,12 +8,11 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import br.edu.acad.ifma.domain.NotificationMessage;
+import br.edu.acad.ifma.domain.Notification;
 import br.edu.acad.ifma.service.notification.NotificationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -47,9 +46,9 @@ class FcmResourceTest {
             )
             .andExpect(status().isAccepted());
 
-        ArgumentCaptor<NotificationMessage> captor = ArgumentCaptor.forClass(NotificationMessage.class);
+        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
         verify(notificationService, times(1)).createAndSend(captor.capture());
-        NotificationMessage sent = captor.getValue();
+        Notification sent = captor.getValue();
         assertThat(sent.getChannel()).isNotNull();
         assertThat(sent.getRecipientToken()).isEqualTo("token-123");
         assertThat(sent.getSubject()).isEqualTo("Hello");

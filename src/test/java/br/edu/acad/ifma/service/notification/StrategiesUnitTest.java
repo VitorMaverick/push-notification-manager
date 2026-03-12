@@ -3,8 +3,8 @@ package br.edu.acad.ifma.service.notification;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 
+import br.edu.acad.ifma.domain.Notification;
 import br.edu.acad.ifma.domain.NotificationChannel;
-import br.edu.acad.ifma.domain.NotificationMessage;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -15,7 +15,7 @@ class StrategiesUnitTest {
     void testEmailStrategy_callsMailSender() {
         JavaMailSender mailSender = Mockito.mock(JavaMailSender.class);
         EmailNotificationStrategy email = new EmailNotificationStrategy(mailSender);
-        NotificationMessage m = new NotificationMessage("Subject", "Body", NotificationChannel.EMAIL);
+        Notification m = new Notification("Subject", "Body", NotificationChannel.EMAIL);
         email.onNotify(m);
         // mailSender.send may or may not be called depending on exceptions; we assert no exception
     }
@@ -23,16 +23,16 @@ class StrategiesUnitTest {
     @Test
     void testSmsStrategy_logs() {
         SmsNotificationStrategy sms = new SmsNotificationStrategy();
-        NotificationMessage m = new NotificationMessage("Subject", "Body", NotificationChannel.SMS);
+        Notification m = new Notification("Subject", "Body", NotificationChannel.SMS);
         sms.onNotify(m);
     }
 
     @Test
     void testFcmStrategy_logs() throws Exception {
         FcmService fcmService = Mockito.mock(FcmService.class);
-        Mockito.when(fcmService.sendToToken(anyString(), any(MensagemEnviada.class))).thenReturn("ok");
+        Mockito.when(fcmService.sendToToken(anyString(), any(NotificationMessageTO.class))).thenReturn("ok");
         FcmNotificationStrategy fcm = new FcmNotificationStrategy(fcmService);
-        NotificationMessage m = new NotificationMessage("Subject", "Body", NotificationChannel.FCM_PUSH);
+        Notification m = new Notification("Subject", "Body", NotificationChannel.FCM_PUSH);
         m.setRecipientToken("token-1");
         fcm.onNotify(m);
     }

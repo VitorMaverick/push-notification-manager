@@ -1,7 +1,6 @@
 package br.edu.acad.ifma.service.notification;
 
-import br.edu.acad.ifma.domain.NotificationChannel;
-import br.edu.acad.ifma.domain.NotificationMessage;
+import br.edu.acad.ifma.domain.Notification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.SimpleMailMessage;
@@ -19,7 +18,7 @@ public class EmailNotificationStrategy implements NotificationObserver {
     }
 
     @Override
-    public void onNotify(NotificationMessage message) {
+    public void onNotify(Notification message) {
         // For demonstration, we'll log and send a very simple mail if mailSender is configured
         if (message == null) return;
         log.info("Sending email notification: {}", message.getSubject());

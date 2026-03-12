@@ -5,8 +5,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import br.edu.acad.ifma.domain.Cliente;
+import br.edu.acad.ifma.domain.Notification;
 import br.edu.acad.ifma.domain.NotificationChannel;
-import br.edu.acad.ifma.domain.NotificationMessage;
 import br.edu.acad.ifma.domain.Segmento;
 import br.edu.acad.ifma.repository.ClienteRepository;
 import br.edu.acad.ifma.repository.NotificationMessageRepository;
@@ -38,7 +38,11 @@ class SegmentNotificationServiceTest {
     @Test
     void testEnviarParaSegmento_notFound() {
         when(segmentoRepository.findByNome(any())).thenReturn(Optional.empty());
-        int sent = service.enviarParaSegmento("nope", NotificationChannel.EMAIL, MensagemEnviada.builder().titulo("T").corpo("C").build());
+        int sent = service.enviarParaSegmento(
+            "nope",
+            NotificationChannel.EMAIL,
+            NotificationMessageTO.builder().titulo("T").corpo("C").build()
+        );
         assertThat(sent).isEqualTo(0);
     }
 
@@ -52,8 +56,12 @@ class SegmentNotificationServiceTest {
         when(notificationRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         when(notificationService.createAndSend(any())).thenAnswer(i -> i.getArgument(0));
 
-        int sent = service.enviarParaSegmento("vip", NotificationChannel.SMS, MensagemEnviada.builder().titulo("T").corpo("C").build());
+        int sent = service.enviarParaSegmento(
+            "vip",
+            NotificationChannel.SMS,
+            NotificationMessageTO.builder().titulo("T").corpo("C").build()
+        );
         assertThat(sent).isEqualTo(2);
-        verify(notificationService, times(2)).createAndSend(any(NotificationMessage.class));
+        verify(notificationService, times(2)).createAndSend(any(Notification.class));
     }
 }

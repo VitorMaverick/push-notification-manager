@@ -9,14 +9,14 @@ import java.util.Objects;
  * Builder pattern for a message to be sent (MensagemEnviada).
  * Fields are optional and can be composed fluently.
  */
-public final class MensagemEnviada {
+public final class NotificationMessageTO {
 
     private final String titulo;
     private final String corpo;
     private final String imagemUrl;
     private final Map<String, String> dados;
 
-    private MensagemEnviada(Builder b) {
+    private NotificationMessageTO(Builder b) {
         this.titulo = b.titulo;
         this.corpo = b.corpo;
         this.imagemUrl = b.imagemUrl;
@@ -86,8 +86,8 @@ public final class MensagemEnviada {
             return this;
         }
 
-        public MensagemEnviada build() {
-            return new MensagemEnviada(this);
+        public NotificationMessageTO build() {
+            return new NotificationMessageTO(this);
         }
     }
 }

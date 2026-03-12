@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.Nullable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -27,7 +26,7 @@ public class FcmService {
      * Envia uma notificação FCM para um token de registro (push notification + dados).
      * Agora executado de forma síncrona (bloqueante).
      */
-    public String sendToToken(String token, MensagemEnviada mensagem) throws Exception {
+    public String sendToToken(String token, NotificationMessageTO mensagem) throws Exception {
         if (this.firebaseMessaging == null) {
             String msg = "FirebaseMessaging not configured; cannot send FCM message";
             log.warn("{} token={}", msg, token);
@@ -67,7 +66,7 @@ public class FcmService {
      * Envia apenas dados customizados para token (síncrono)
      */
     public String sendDataToToken(String token, Map<String, String> data) throws Exception {
-        MensagemEnviada m = MensagemEnviada.builder().dados(data).build();
+        NotificationMessageTO m = NotificationMessageTO.builder().dados(data).build();
         return sendToToken(token, m);
     }
 }

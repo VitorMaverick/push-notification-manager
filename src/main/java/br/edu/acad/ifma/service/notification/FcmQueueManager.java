@@ -22,7 +22,7 @@ public class FcmQueueManager {
         this.fcmService = fcmService;
     }
 
-    public void enqueue(String token, MensagemEnviada mensagem) {
+    public void enqueue(String token, NotificationMessageTO mensagem) {
         queue.add(new QueueItem(token, mensagem));
     }
 
@@ -44,9 +44,9 @@ public class FcmQueueManager {
     private static final class QueueItem {
 
         final String token;
-        final MensagemEnviada mensagem;
+        final NotificationMessageTO mensagem;
 
-        QueueItem(String token, MensagemEnviada mensagem) {
+        QueueItem(String token, NotificationMessageTO mensagem) {
             this.token = token;
             this.mensagem = mensagem;
         }

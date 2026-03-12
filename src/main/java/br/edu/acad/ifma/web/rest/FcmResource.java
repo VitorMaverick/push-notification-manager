@@ -1,7 +1,7 @@
 package br.edu.acad.ifma.web.rest;
 
+import br.edu.acad.ifma.domain.Notification;
 import br.edu.acad.ifma.domain.NotificationChannel;
-import br.edu.acad.ifma.domain.NotificationMessage;
 import br.edu.acad.ifma.service.notification.NotificationService;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -28,7 +28,7 @@ public class FcmResource {
     @PostMapping("/send")
     public ResponseEntity<String> sendPush(@Valid @RequestBody FcmRequest request) {
         log.debug("Received FCM send request for token={}", request.getToken());
-        NotificationMessage nm = new NotificationMessage(request.getTitulo(), request.getCorpo(), NotificationChannel.FCM_PUSH);
+        Notification nm = new Notification(request.getTitulo(), request.getCorpo(), NotificationChannel.FCM_PUSH);
         nm.setRecipientToken(request.getToken());
         notificationService.createAndSend(nm);
         return ResponseEntity.accepted().body("Queued via NotificationService");

@@ -1,7 +1,6 @@
 package br.edu.acad.ifma.service.notification;
 
-import br.edu.acad.ifma.domain.NotificationChannel;
-import br.edu.acad.ifma.domain.NotificationMessage;
+import br.edu.acad.ifma.domain.Notification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -17,7 +16,7 @@ public class FcmNotificationStrategy implements NotificationObserver {
     }
 
     @Override
-    public void onNotify(NotificationMessage message) {
+    public void onNotify(Notification message) {
         if (message == null) return;
         // Use recipientToken from NotificationMessage to send via FcmService
         String token = message.getRecipientToken();
@@ -25,9 +24,12 @@ public class FcmNotificationStrategy implements NotificationObserver {
             log.warn("No recipient token for FCM message id={}", message.getId());
             return;
         }
-        MensagemEnviada m = MensagemEnviada.builder().titulo(message.getSubject()).corpo(message.getBody()).build();
+        NotificationMessageTO notificationMessageTO = NotificationMessageTO.builder()
+            .titulo(message.getSubject())
+            .corpo(message.getBody())
+            .build();
         try {
-            String resp = fcmService.sendToToken(token, m);
+            String resp = fcmService.sendToToken(token, notificationMessageTO);
             log.info("Triggered FCM send for message id={} token={} response={}", message.getId(), token, resp);
         } catch (Exception e) {
             log.warn("Failed to send FCM message for id={} token={}: {}", message.getId(), token, e.getMessage());

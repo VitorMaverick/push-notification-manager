@@ -4,8 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+import br.edu.acad.ifma.domain.Notification;
 import br.edu.acad.ifma.domain.NotificationChannel;
-import br.edu.acad.ifma.domain.NotificationMessage;
 import br.edu.acad.ifma.repository.NotificationMessageRepository;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,7 +30,7 @@ class NotificationServiceTest {
         fcmObserver = Mockito.mock(NotificationObserver.class);
 
         when(repository.save(any())).thenAnswer(i -> {
-            NotificationMessage m = i.getArgument(0);
+            Notification m = i.getArgument(0);
             m.setId(123L);
             return m;
         });
@@ -41,9 +41,9 @@ class NotificationServiceTest {
 
     @Test
     void testCreateAndSend_email() {
-        NotificationMessage msg = new NotificationMessage("Hi", "Body", NotificationChannel.EMAIL);
+        Notification msg = new Notification("Hi", "Body", NotificationChannel.EMAIL);
 
-        NotificationMessage saved = service.createAndSend(msg);
+        Notification saved = service.createAndSend(msg);
 
         assertThat(saved.getId()).isEqualTo(123L);
         // verify all observers are notified for the message (now observers handle channel logic)
@@ -57,16 +57,16 @@ class NotificationServiceTest {
         NotificationObserver observer = Mockito.mock(NotificationObserver.class);
         service.registerObserver(observer);
 
-        NotificationMessage msg = new NotificationMessage("Hi", "Body", NotificationChannel.SMS);
-        NotificationMessage saved = service.createAndSend(msg);
+        Notification msg = new Notification("Hi", "Body", NotificationChannel.SMS);
+        Notification saved = service.createAndSend(msg);
 
         verify(observer, times(1)).onNotify(saved);
     }
 
     @Test
     void testNoStrategyForChannel() {
-        NotificationMessage msg = new NotificationMessage("Hi", "Body", null);
-        NotificationMessage saved = service.createAndSend(msg);
+        Notification msg = new Notification("Hi", "Body", null);
+        Notification saved = service.createAndSend(msg);
         // observers should still be notified (observers decide how to handle channel == null)
         verify(emailObserver, times(1)).onNotify(saved);
         verify(smsObserver, times(1)).onNotify(saved);

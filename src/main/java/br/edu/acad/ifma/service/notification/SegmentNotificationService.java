@@ -1,8 +1,8 @@
 package br.edu.acad.ifma.service.notification;
 
 import br.edu.acad.ifma.domain.Cliente;
+import br.edu.acad.ifma.domain.Notification;
 import br.edu.acad.ifma.domain.NotificationChannel;
-import br.edu.acad.ifma.domain.NotificationMessage;
 import br.edu.acad.ifma.domain.Segmento;
 import br.edu.acad.ifma.repository.ClienteRepository;
 import br.edu.acad.ifma.repository.NotificationMessageRepository;
@@ -38,7 +38,7 @@ public class SegmentNotificationService {
     }
 
     @Transactional
-    public int enviarParaSegmento(String nomeSegmento, NotificationChannel canal, MensagemEnviada mensagem) {
+    public int enviarParaSegmento(String nomeSegmento, NotificationChannel canal, NotificationMessageTO mensagem) {
         Optional<Segmento> segmentoOpt = segmentoRepository.findByNome(nomeSegmento);
         if (segmentoOpt.isEmpty()) {
             log.warn("Segmento {} não encontrado", nomeSegmento);
@@ -48,7 +48,7 @@ public class SegmentNotificationService {
         List<Cliente> clientes = segmento.getClientes().stream().collect(Collectors.toList());
         int count = 0;
         for (Cliente c : clientes) {
-            NotificationMessage nm = new NotificationMessage(mensagem.getTitulo(), mensagem.getCorpo(), canal);
+            Notification nm = new Notification(mensagem.getTitulo(), mensagem.getCorpo(), canal);
             // Here you could set recipient info (e.g., token) from Cliente; for now we let NotificationService persist and notify observers
             notificationService.createAndSend(nm);
             count++;

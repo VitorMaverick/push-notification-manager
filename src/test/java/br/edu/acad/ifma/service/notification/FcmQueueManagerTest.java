@@ -23,8 +23,8 @@ class FcmQueueManagerTest {
     void testEnqueueAndProcess() throws Exception {
         when(fcmService.sendToToken(any(), any())).thenReturn("ok");
 
-        queueManager.enqueue("t1", MensagemEnviada.builder().titulo("T").corpo("C").build());
-        queueManager.enqueue("t2", MensagemEnviada.builder().titulo("T2").corpo("C2").build());
+        queueManager.enqueue("t1", NotificationMessageTO.builder().titulo("T").corpo("C").build());
+        queueManager.enqueue("t2", NotificationMessageTO.builder().titulo("T2").corpo("C2").build());
 
         int processed = queueManager.processQueue();
         assertThat(processed).isEqualTo(2);

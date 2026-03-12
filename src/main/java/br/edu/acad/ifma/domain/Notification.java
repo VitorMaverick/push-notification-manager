@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import java.time.Instant;
 
 @Entity
-@Table(name = "notification_message")
-public class NotificationMessage {
+@Table(name = "notification")
+public class Notification {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "sequenceGenerator")
@@ -27,9 +27,9 @@ public class NotificationMessage {
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
 
-    public NotificationMessage() {}
+    public Notification() {}
 
-    public NotificationMessage(String subject, String body, NotificationChannel channel) {
+    public Notification(String subject, String body, NotificationChannel channel) {
         this.subject = subject;
         this.body = body;
         this.channel = channel;
