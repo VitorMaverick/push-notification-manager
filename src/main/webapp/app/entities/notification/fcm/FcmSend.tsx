@@ -3,6 +3,9 @@ import { useForm, Controller } from 'react-hook-form';
 import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
 import NotificationService from './notification.service';
 import axios from 'axios';
+import { requestFcmTokenFromBrowser, onFcmMessage } from 'app/firebaseClient';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 type FormValues = {
   token: string;
@@ -12,11 +15,35 @@ type FormValues = {
 };
 
 const FcmSend = () => {
-  const { control, handleSubmit, reset } = useForm<FormValues>({ defaultValues: { token: '', titulo: '', corpo: '', dados: '' } });
+  const { control, handleSubmit, reset, setValue } = useForm<FormValues>({
+    defaultValues: { token: '', titulo: '', corpo: '', dados: '' },
+  });
   const [loading, setLoading] = React.useState(false);
   const [logs, setLogs] = React.useState<string[]>([]);
 
   const addLog = (m: string) => setLogs(l => [new Date().toISOString() + ' ' + m, ...l].slice(0, 20));
+
+  React.useEffect(() => {
+    try {
+      onFcmMessage(payload => addLog('Foreground message: ' + JSON.stringify(payload)));
+    } catch (e) {
+      // ignore if messaging not available
+    }
+  }, []);
+
+  const obtainToken = async () => {
+    addLog('Obtaining FCM token from browser...');
+    try {
+      const token = await requestFcmTokenFromBrowser();
+      setValue('token', token);
+      addLog('Obtained FCM token: ' + token);
+      alert('Token obtido e preenchido no campo Token');
+    } catch (e) {
+      console.error(e);
+      addLog('Error obtaining token: ' + ((e as Error).message || JSON.stringify(e)));
+      alert('Erro obtendo token: ' + (e as Error).message);
+    }
+  };
 
   const onSubmit = async (data: FormValues) => {
     addLog('onSubmit called with ' + JSON.stringify(data));
@@ -55,6 +82,12 @@ const FcmSend = () => {
   return (
     <div className="container mt-3">
       <h2>Enviar Push via FCM</h2>
+      <ToastContainer />
+      <div className="mb-2">
+        <Button color="secondary" onClick={obtainToken} outline>
+          Obter token FCM do navegador
+        </Button>
+      </div>
       <Form onSubmit={handleSubmit(onSubmit)}>
         <FormGroup>
           <Label for="token">Token</Label>

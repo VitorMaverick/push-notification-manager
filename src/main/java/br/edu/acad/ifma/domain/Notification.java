@@ -27,6 +27,14 @@ public class Notification {
     @Column(nullable = false)
     private Instant createdAt = Instant.now();
 
+    // Field to store the FCM message id returned by Firebase after sending
+    @Column(name = "fcm_message_id")
+    private String fcmMessageId;
+
+    // Timestamp when the client acknowledged receipt (via ACK)
+    @Column(name = "delivered_at")
+    private Instant deliveredAt;
+
     public Notification() {}
 
     public Notification(String subject, String body, NotificationChannel channel) {
@@ -81,5 +89,21 @@ public class Notification {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getFcmMessageId() {
+        return fcmMessageId;
+    }
+
+    public void setFcmMessageId(String fcmMessageId) {
+        this.fcmMessageId = fcmMessageId;
+    }
+
+    public Instant getDeliveredAt() {
+        return deliveredAt;
+    }
+
+    public void setDeliveredAt(Instant deliveredAt) {
+        this.deliveredAt = deliveredAt;
     }
 }

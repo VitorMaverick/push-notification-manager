@@ -118,6 +118,8 @@ module.exports = async options => {
             { from: './src/main/webapp/content/', to: 'content/' },
             { from: './src/main/webapp/favicon.ico', to: 'favicon.ico' },
             { from: './src/main/webapp/manifest.webapp', to: 'manifest.webapp' },
+            // Copy service worker for Firebase messaging so it's available at the web root
+            { from: './src/main/webapp/firebase-messaging-sw.js', to: 'firebase-messaging-sw.js' },
             // jhipster-needle-add-assets-to-webpack - JHipster will add/remove third-party resources in this array
             { from: './src/main/webapp/robots.txt', to: 'robots.txt' },
           ],
