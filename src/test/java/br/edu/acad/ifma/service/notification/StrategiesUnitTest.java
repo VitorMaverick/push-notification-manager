@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 
 import br.edu.acad.ifma.domain.Notification;
 import br.edu.acad.ifma.domain.NotificationChannel;
+import br.edu.acad.ifma.repository.NotificationMessageRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -31,7 +32,8 @@ class StrategiesUnitTest {
     void testFcmStrategy_logs() throws Exception {
         FcmService fcmService = Mockito.mock(FcmService.class);
         Mockito.when(fcmService.sendToToken(anyString(), any(NotificationMessageTO.class))).thenReturn("ok");
-        FcmNotificationStrategy fcm = new FcmNotificationStrategy(fcmService);
+        NotificationMessageRepository repo = Mockito.mock(NotificationMessageRepository.class);
+        FcmNotificationStrategy fcm = new FcmNotificationStrategy(fcmService, repo);
         Notification m = new Notification("Subject", "Body", NotificationChannel.FCM_PUSH);
         m.setRecipientToken("token-1");
         fcm.onNotify(m);
