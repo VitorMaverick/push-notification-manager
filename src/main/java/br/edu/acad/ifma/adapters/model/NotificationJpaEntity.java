@@ -19,7 +19,7 @@ public class NotificationJpaEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notificationJpaSeq")
-    @SequenceGenerator(name = "notificationJpaSeq", sequenceName = "hibernate_sequence", allocationSize = 1)
+    @SequenceGenerator(name = "notificationJpaSeq", sequenceName = "notification_id_seq", allocationSize = 1)
     private Long id;
 
     @Column(name = "subject")
