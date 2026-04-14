@@ -1,21 +1,26 @@
 import React from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { Button, Form, FormGroup, Label, Input } from 'reactstrap';
+import { toast, ToastContainer } from 'react-toastify';
 import NotificationService from './notification.service';
-import axios from 'axios';
 import { requestFcmTokenFromBrowser, onFcmMessage } from 'app/firebaseClient';
-import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 type FormValues = {
   token: string;
   titulo?: string;
   corpo?: string;
-  dados?: string; // JSON string
+  dados?: string;
 };
 
 const FcmSend = () => {
-  const { control, handleSubmit, reset, setValue } = useForm<FormValues>({
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<FormValues>({
     defaultValues: { token: '', titulo: '', corpo: '', dados: '' },
   });
   const [loading, setLoading] = React.useState(false);
@@ -37,11 +42,11 @@ const FcmSend = () => {
       const token = await requestFcmTokenFromBrowser();
       setValue('token', token);
       addLog('Obtained FCM token: ' + token);
-      alert('Token obtido e preenchido no campo Token');
+      toast.success('Token obtained and filled in Token field');
     } catch (e) {
       console.error(e);
       addLog('Error obtaining token: ' + ((e as Error).message || JSON.stringify(e)));
-      alert('Erro obtendo token: ' + (e as Error).message);
+      toast.error('Error obtaining token: ' + (e as Error).message);
     }
   };
 
@@ -54,7 +59,7 @@ const FcmSend = () => {
         try {
           parsedDados = JSON.parse(data.dados);
         } catch (pe) {
-          alert('Campo Dados contém JSON inválido: ' + (pe as Error).message);
+          toast.error('Data field contains invalid JSON: ' + (pe as Error).message);
           return;
         }
       }
@@ -68,12 +73,12 @@ const FcmSend = () => {
       addLog('Sending payload ' + JSON.stringify(payload));
       const resp = await NotificationService.sendFcm(payload);
       addLog('Send response: ' + JSON.stringify(resp));
-      alert('Enviado para fila (ou disparado) com sucesso');
+      toast.success('Notification sent successfully');
       reset();
     } catch (e) {
       console.error('Error sending FCM', e);
       addLog('Error sending FCM: ' + ((e as Error).message || JSON.stringify(e)));
-      alert('Erro ao enviar: ' + (e as Error).message);
+      toast.error('Error sending: ' + (e as Error).message);
     } finally {
       setLoading(false);
     }
@@ -81,11 +86,11 @@ const FcmSend = () => {
 
   return (
     <div className="container mt-3">
-      <h2>Enviar Push via FCM</h2>
+      <h2>Send Push Notification via FCM</h2>
       <ToastContainer />
       <div className="mb-2">
         <Button color="secondary" onClick={obtainToken} outline>
-          Obter token FCM do navegador
+          Obtain FCM Token from Browser
         </Button>
       </div>
       <Form onSubmit={handleSubmit(onSubmit)}>
@@ -94,28 +99,29 @@ const FcmSend = () => {
           <Controller
             name="token"
             control={control}
-            rules={{ required: true }}
-            render={({ field }) => <Input id="token" {...field} placeholder="token do dispositivo" />}
+            rules={{ required: 'Token is required' }}
+            render={({ field }) => <Input id="token" {...field} placeholder="Device token" />}
           />
+          {errors.token && <span className="text-danger">{errors.token.message}</span>}
         </FormGroup>
         <FormGroup>
-          <Label for="titulo">Título</Label>
+          <Label for="titulo">Title</Label>
           <Controller
             name="titulo"
             control={control}
-            render={({ field }) => <Input id="titulo" {...field} placeholder="Título da notificação" />}
+            render={({ field }) => <Input id="titulo" {...field} placeholder="Notification title" />}
           />
         </FormGroup>
         <FormGroup>
-          <Label for="corpo">Corpo</Label>
+          <Label for="corpo">Body</Label>
           <Controller
             name="corpo"
             control={control}
-            render={({ field }) => <Input id="corpo" {...field} placeholder="Texto da notificação" />}
+            render={({ field }) => <Input id="corpo" {...field} placeholder="Notification body" />}
           />
         </FormGroup>
         <FormGroup>
-          <Label for="dados">Dados (JSON)</Label>
+          <Label for="dados">Data (JSON)</Label>
           <Controller
             name="dados"
             control={control}
@@ -123,7 +129,7 @@ const FcmSend = () => {
           />
         </FormGroup>
         <Button type="submit" color="primary" disabled={loading} aria-busy={loading}>
-          {loading ? 'Enviando...' : 'Enviar'}
+          {loading ? 'Sending...' : 'Send Notification'}
         </Button>
       </Form>
       <div className="mt-3">

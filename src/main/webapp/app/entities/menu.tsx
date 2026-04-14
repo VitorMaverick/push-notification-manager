@@ -8,6 +8,12 @@ const EntitiesMenu = () => {
     <>
       {/* prettier-ignore */}
       <MenuItem to="/notification/fcm/send" icon="bell">FCM</MenuItem>
+      <MenuItem to="/notifications/history" icon="list">
+        Notification History
+      </MenuItem>
+      <MenuItem to="/devices" icon="mobile">
+        Device Management
+      </MenuItem>
       {/* jhipster-needle-add-entity-to-menu - JHipster will add entities to the menu here */}
     </>
   );

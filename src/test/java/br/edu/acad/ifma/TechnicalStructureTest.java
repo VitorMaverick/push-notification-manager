@@ -2,6 +2,8 @@ package br.edu.acad.ifma;
 
 import static com.tngtech.archunit.base.DescribedPredicate.alwaysTrue;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.belongToAnyOf;
+import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static com.tngtech.archunit.library.Architectures.layeredArchitecture;
 
 import com.tngtech.archunit.core.importer.ImportOption.DoNotIncludeTests;
@@ -34,5 +36,25 @@ class TechnicalStructureTest {
         .ignoreDependency(alwaysTrue(), belongToAnyOf(
             br.edu.acad.ifma.config.Constants.class,
             br.edu.acad.ifma.config.ApplicationProperties.class
-        ));
+        ))
+        .ignoreDependency(resideInAPackage("..app.."), alwaysTrue())
+        .ignoreDependency(resideInAPackage("..adapters.."), alwaysTrue())
+        .ignoreDependency(alwaysTrue(), resideInAPackage("..app.."))
+        .ignoreDependency(alwaysTrue(), resideInAPackage("..adapters.."));
+
+    @ArchTest
+    static final ArchRule domainMustNotDependOnAdapters = noClasses()
+        .that()
+        .resideInAPackage("..app.domain..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("..adapters..");
+
+    @ArchTest
+    static final ArchRule portsMustNotDependOnAdapters = noClasses()
+        .that()
+        .resideInAPackage("..app.port..")
+        .should()
+        .dependOnClassesThat()
+        .resideInAPackage("..adapters..");
 }
