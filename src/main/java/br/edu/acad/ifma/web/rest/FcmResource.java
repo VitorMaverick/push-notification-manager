@@ -1,8 +1,7 @@
 package br.edu.acad.ifma.web.rest;
 
-import br.edu.acad.ifma.domain.Notification;
-import br.edu.acad.ifma.domain.NotificationChannel;
-import br.edu.acad.ifma.service.notification.NotificationService;
+import br.edu.acad.ifma.app.usecase.notification.SendPushNotificationCommand;
+import br.edu.acad.ifma.app.usecase.notification.SendPushNotificationUseCase;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,18 +18,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class FcmResource {
 
     private final Logger log = LoggerFactory.getLogger(FcmResource.class);
-    private final NotificationService notificationService;
+    private final SendPushNotificationUseCase sendUseCase;
 
-    public FcmResource(NotificationService notificationService) {
-        this.notificationService = notificationService;
+    public FcmResource(SendPushNotificationUseCase sendUseCase) {
+        this.sendUseCase = sendUseCase;
     }
 
     @PostMapping("/send")
     public ResponseEntity<String> sendPush(@Valid @RequestBody FcmRequest request) {
         log.debug("Received FCM send request for token={}", request.getToken());
-        Notification nm = new Notification(request.getTitulo(), request.getCorpo(), NotificationChannel.FCM_PUSH);
-        nm.setRecipientToken(request.getToken());
-        notificationService.createAndSend(nm);
+        SendPushNotificationCommand cmd = new SendPushNotificationCommand(request.getToken(), request.getTitulo(), request.getCorpo());
+        sendUseCase.execute(cmd);
         return ResponseEntity.accepted().body("Queued via NotificationService");
     }
 }
