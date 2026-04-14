@@ -152,3 +152,6 @@ Desktop.ini
 coverage/
 .nyc_output/
 .worktrees/
+
+# Firebase service account keys
+*-firebase-adminsdk-*.json

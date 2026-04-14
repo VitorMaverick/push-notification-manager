@@ -108,4 +108,4 @@ jhipster:
 
 # Add Firebase service account file for local development. Place your JSON under src/main/resources/config/firebase-key.json
 firebase:
-  service-account-file: 'classpath:config/push-notification-manage-2116b-firebase-adminsdk-fbsvc-691df0a8b4.json'
+  service-account-file: 'classpath:config/push-notification-manage-2116b-firebase-adminsdk-fbsvc-a4d7dcb7c9.json'
