@@ -1,0 +1,64 @@
+
+    # Request to create/send notification
+    Browser->>Controller: POST /api/v1/notifications\n{ deviceToken, title, body, dados }
+    activate Controller
+
+    Controller->>UseCase: SendPushNotificationCommand(deviceToken,title,body)
+    activate UseCase
+
+    UseCase->>Repo: save(notification status=PENDING)
+    activate Repo
+    Repo-->>UseCase: savedNotification(id=..., status=PENDING)
+    deactivate Repo
+
+    UseCase->>FcmService: sendPushNotification(token,title,body)  %% PushSenderPort implemented by FcmService
+    activate FcmService
+
+    FcmService->>Firebase: send(Message{notification,data,token})
+    activate Firebase
+    Firebase-->>FcmService: messageId (e.g. "fcm-12345")
+    deactivate Firebase
+
+    FcmService-->>UseCase: messageId
+    deactivate FcmService
+
+    UseCase->>Repo: update(notification.id, status=SENT, fcmMessageId=messageId)
+    activate Repo
+    Repo-->>UseCase: updatedNotification(status=SENT, fcmMessageId)
+    deactivate Repo
+
+    UseCase-->>Controller: result (PushNotification DTO)
+    deactivate UseCase
+
+    Controller-->>Browser: 202 Accepted\n{ status: "SENT", id: ..., fcmMessageId: "fcm-12345" }
+    deactivate Controller
+
+    note right of Browser: Later: Firebase delivers push to device/browser
+
+    # Push delivery to service worker and ACK back to server
+    Firebase->>SW: push event (payload incl. messageId="fcm-12345", notification/data)
+    activate SW
+
+    SW->>SW: showNotification(...)  %% service worker displays the notification
+    SW-->>Browser: notification shown (optional: postMessage to page)
+    note right of SW: Service worker may run when page closed
+
+    SW->>Controller: POST /api/v1/notifications/internal/fcm/ack\n{ messageId, token, receivedAt }
+    activate Controller
+
+    Controller->>Repo: findByFcmMessageId("fcm-12345")
+    activate Repo
+    Repo-->>Controller: Notification entity (found)
+    deactivate Repo
+
+    Controller->>Repo: update(notification.id, status=DELIVERED, deliveredAt=receivedAt)
+    activate Repo
+    Repo-->>Controller: updatedNotification(status=DELIVERED)
+    deactivate Repo
+
+    Controller-->>SW: 200 OK
+    deactivate Controller
+    deactivate SW
+
+    note right of Repo: Notification lifecycle persisted:
+    note right of Repo: PENDING -> SENT (fcmMessageId) -> DELIVERED (ack)

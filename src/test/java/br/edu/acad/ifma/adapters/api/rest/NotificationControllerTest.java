@@ -14,6 +14,7 @@ import br.edu.acad.ifma.app.domain.shared.FcmToken;
 import br.edu.acad.ifma.app.domain.shared.NotificationBody;
 import br.edu.acad.ifma.app.domain.shared.NotificationTitle;
 import br.edu.acad.ifma.app.domain.shared.exception.NotificationNotFoundException;
+import br.edu.acad.ifma.app.port.NotificationRepositoryPort;
 import br.edu.acad.ifma.app.usecase.notification.GetNotificationByIdUseCase;
 import br.edu.acad.ifma.app.usecase.notification.GetNotificationHistoryUseCase;
 import br.edu.acad.ifma.app.usecase.notification.SendPushNotificationUseCase;
@@ -21,9 +22,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -31,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(controllers = NotificationController.class)
 @WithMockUser
+@Import(NotificationControllerTest.TestConfig.class)
 class NotificationControllerTest {
 
     private static final String VALID_TOKEN = "abcdefghijklmnopqrstuvwxyz";
@@ -41,14 +46,17 @@ class NotificationControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockBean
+    @Autowired
     private SendPushNotificationUseCase sendUseCase;
 
-    @MockBean
+    @Autowired
     private GetNotificationHistoryUseCase historyUseCase;
 
-    @MockBean
+    @Autowired
     private GetNotificationByIdUseCase getByIdUseCase;
+
+    @Autowired
+    private NotificationRepositoryPort notificationRepository;
 
     @Test
     void post_returns_202() throws Exception {
@@ -97,5 +105,29 @@ class NotificationControllerTest {
     void get_by_id_not_found_returns_404() throws Exception {
         when(getByIdUseCase.execute(any())).thenThrow(new NotificationNotFoundException("Notification not found: 99"));
         mockMvc.perform(get("/api/v1/notifications/99")).andExpect(status().isNotFound());
+    }
+
+    @TestConfiguration
+    static class TestConfig {
+
+        @Bean
+        public SendPushNotificationUseCase sendPushNotificationUseCase() {
+            return Mockito.mock(SendPushNotificationUseCase.class);
+        }
+
+        @Bean
+        public GetNotificationHistoryUseCase getNotificationHistoryUseCase() {
+            return Mockito.mock(GetNotificationHistoryUseCase.class);
+        }
+
+        @Bean
+        public GetNotificationByIdUseCase getNotificationByIdUseCase() {
+            return Mockito.mock(GetNotificationByIdUseCase.class);
+        }
+
+        @Bean
+        public NotificationRepositoryPort notificationRepository() {
+            return Mockito.mock(NotificationRepositoryPort.class);
+        }
     }
 }

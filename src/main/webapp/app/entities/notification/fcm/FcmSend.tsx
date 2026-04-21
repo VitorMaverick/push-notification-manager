@@ -64,10 +64,11 @@ const FcmSend = () => {
         }
       }
 
+      // Backend expects deviceToken/title/body field names
       const payload = {
-        token: data.token,
-        titulo: data.titulo,
-        corpo: data.corpo,
+        deviceToken: data.token,
+        title: data.titulo,
+        body: data.corpo,
         dados: parsedDados,
       };
       addLog('Sending payload ' + JSON.stringify(payload));

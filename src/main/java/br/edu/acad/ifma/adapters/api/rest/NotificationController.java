@@ -5,8 +5,10 @@ import br.edu.acad.ifma.adapters.api.rest.outbound.NotificationDetailResponse;
 import br.edu.acad.ifma.adapters.api.rest.outbound.NotificationResponse;
 import br.edu.acad.ifma.adapters.api.rest.outbound.NotificationSummaryResponse;
 import br.edu.acad.ifma.adapters.api.rest.presenter.NotificationPresenter;
+import br.edu.acad.ifma.adapters.inbound.FcmAckRequest;
 import br.edu.acad.ifma.app.domain.notification.NotificationStatus;
 import br.edu.acad.ifma.app.domain.notification.PushNotification;
+import br.edu.acad.ifma.app.port.NotificationRepositoryPort;
 import br.edu.acad.ifma.app.usecase.notification.GetNotificationByIdUseCase;
 import br.edu.acad.ifma.app.usecase.notification.GetNotificationHistoryUseCase;
 import br.edu.acad.ifma.app.usecase.notification.NotificationFilter;
@@ -35,15 +37,18 @@ public class NotificationController {
     private final SendPushNotificationUseCase sendUseCase;
     private final GetNotificationHistoryUseCase historyUseCase;
     private final GetNotificationByIdUseCase getByIdUseCase;
+    private final NotificationRepositoryPort notificationRepository;
 
     public NotificationController(
         SendPushNotificationUseCase sendUseCase,
         GetNotificationHistoryUseCase historyUseCase,
-        GetNotificationByIdUseCase getByIdUseCase
+        GetNotificationByIdUseCase getByIdUseCase,
+        NotificationRepositoryPort notificationRepository
     ) {
         this.sendUseCase = sendUseCase;
         this.historyUseCase = historyUseCase;
         this.getByIdUseCase = getByIdUseCase;
+        this.notificationRepository = notificationRepository;
     }
 
     @PostMapping
@@ -73,5 +78,19 @@ public class NotificationController {
     @GetMapping("/{id}")
     public ResponseEntity<NotificationDetailResponse> get(@PathVariable Long id) {
         return ResponseEntity.ok(NotificationPresenter.toDetail(getByIdUseCase.execute(id)));
+    }
+
+    // New ACK endpoint: receives FCM delivery ack information and marks notification delivered when found
+    @PostMapping("/internal/fcm/ack")
+    public ResponseEntity<Void> ack(@RequestBody FcmAckRequest request) {
+        if (request.getMessageId() != null) {
+            notificationRepository
+                .findByFcmMessageId(request.getMessageId())
+                .ifPresent(n -> {
+                    n.markDelivered();
+                    notificationRepository.save(n);
+                });
+        }
+        return ResponseEntity.ok().build();
     }
 }
