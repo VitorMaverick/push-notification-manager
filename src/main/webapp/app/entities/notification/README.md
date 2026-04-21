@@ -1,6 +1,6 @@
 # Notification UI
 
-This folder contains a simple React form to send push notifications via the backend `/api/fcm/send` endpoint.
+This folder contains a simple React form to send push notifications via the backend `/api/v1/notifications` endpoint.
 
 How to use
 

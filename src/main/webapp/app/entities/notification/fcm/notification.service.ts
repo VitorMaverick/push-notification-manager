@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-const FCM_BASE = '/api/fcm';
 const V1_BASE = '/api/v1/notifications';
 
 const sendFcm = async (payload: any) => {
   try {
-    const response = await axios.post(`${FCM_BASE}/send`, payload);
+    // Use the new v1 notifications endpoint for creating/sending notifications
+    const response = await axios.post(`${V1_BASE}`, payload);
     return response.data;
   } catch (err: any) {
     const msg = err?.response?.data?.message || err?.message || 'Unknown error';
