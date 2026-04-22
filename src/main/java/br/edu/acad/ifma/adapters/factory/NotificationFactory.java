@@ -1,11 +1,11 @@
 package br.edu.acad.ifma.adapters.factory;
 
+import br.edu.acad.ifma.adapters.auth.model.NotificationChannel;
 import br.edu.acad.ifma.adapters.model.NotificationJpaEntity;
 import br.edu.acad.ifma.app.domain.notification.PushNotification;
 import br.edu.acad.ifma.app.domain.shared.FcmToken;
 import br.edu.acad.ifma.app.domain.shared.NotificationBody;
 import br.edu.acad.ifma.app.domain.shared.NotificationTitle;
-import br.edu.acad.ifma.domain.NotificationChannel;
 
 public abstract class NotificationFactory {
 

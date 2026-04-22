@@ -1,8 +1,8 @@
 package br.edu.acad.ifma.config;
 
-import static br.edu.acad.ifma.security.SecurityUtils.JWT_ALGORITHM;
+import static br.edu.acad.ifma.adapters.auth.security.SecurityUtils.JWT_ALGORITHM;
 
-import br.edu.acad.ifma.management.SecurityMetersService;
+import br.edu.acad.ifma.adapters.auth.management.SecurityMetersService;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.util.Base64;
 import javax.crypto.SecretKey;

@@ -2,8 +2,8 @@ package br.edu.acad.ifma.config;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
-import br.edu.acad.ifma.security.*;
-import br.edu.acad.ifma.web.filter.SpaWebFilter;
+import br.edu.acad.ifma.adapters.auth.security.*;
+import br.edu.acad.ifma.adapters.auth.web.filter.SpaWebFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;

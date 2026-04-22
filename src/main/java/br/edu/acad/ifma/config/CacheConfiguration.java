@@ -41,11 +41,11 @@ public class CacheConfiguration {
     @Bean
     public JCacheManagerCustomizer cacheManagerCustomizer() {
         return cm -> {
-            createCache(cm, br.edu.acad.ifma.repository.UserRepository.USERS_BY_LOGIN_CACHE);
-            createCache(cm, br.edu.acad.ifma.repository.UserRepository.USERS_BY_EMAIL_CACHE);
-            createCache(cm, br.edu.acad.ifma.domain.User.class.getName());
-            createCache(cm, br.edu.acad.ifma.domain.Authority.class.getName());
-            createCache(cm, br.edu.acad.ifma.domain.User.class.getName() + ".authorities");
+            createCache(cm, br.edu.acad.ifma.adapters.auth.repository.UserRepository.USERS_BY_LOGIN_CACHE);
+            createCache(cm, br.edu.acad.ifma.adapters.auth.repository.UserRepository.USERS_BY_EMAIL_CACHE);
+            createCache(cm, br.edu.acad.ifma.adapters.auth.model.User.class.getName());
+            createCache(cm, br.edu.acad.ifma.adapters.auth.model.Authority.class.getName());
+            createCache(cm, br.edu.acad.ifma.adapters.auth.model.User.class.getName() + ".authorities");
             // jhipster-needle-caffeine-add-entry
         };
     }
