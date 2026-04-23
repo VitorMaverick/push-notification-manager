@@ -228,3 +228,9 @@ jhipster:
 # ===================================================================
 
 # application:
+# Disable Firebase tracing to avoid DEBUG logs about missing OpenCensus classes
+firebase:
+  tracing:
+    enabled: false
+
+# application:
