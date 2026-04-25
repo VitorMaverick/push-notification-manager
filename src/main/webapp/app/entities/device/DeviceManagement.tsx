@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Button, Form, FormGroup, Label, Input, Table } from 'reactstrap';
 import { toast, ToastContainer } from 'react-toastify';
 import { registerDevice, listDevices } from './device.service';
+import { requestFcmTokenFromBrowser } from 'app/firebaseClient';
 import 'react-toastify/dist/ReactToastify.css';
 
 interface RegisterForm {
@@ -24,12 +25,16 @@ const PAGE_SIZES = [10, 20, 50];
 
 const DeviceManagement = () => {
   const {
-    register,
+    control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors },
-  } = useForm<RegisterForm>();
+  } = useForm<RegisterForm>({
+    defaultValues: { fcmToken: '', platform: '', userAgent: '' },
+  });
   const [registering, setRegistering] = useState(false);
+  const [obtainingToken, setObtainingToken] = useState(false);
 
   const [devices, setDevices] = useState<DeviceRow[]>([]);
   const [page, setPage] = useState(0);
@@ -47,6 +52,20 @@ const DeviceManagement = () => {
       toast.error('Error loading devices: ' + (e?.message || 'Unknown error'));
     } finally {
       setLoadingList(false);
+    }
+  };
+
+  const obtainToken = async () => {
+    setObtainingToken(true);
+    try {
+      const token = await requestFcmTokenFromBrowser();
+      setValue('fcmToken', token);
+      toast.success('Token obtained and filled in FCM Token field');
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Error obtaining token: ' + ((e as Error).message || JSON.stringify(e)));
+    } finally {
+      setObtainingToken(false);
     }
   };
 
@@ -91,24 +110,44 @@ const DeviceManagement = () => {
       <div className="card mb-4">
         <div className="card-body">
           <h5 className="card-title">Register Device</h5>
+          <div className="mb-2">
+            <Button color="secondary" onClick={obtainToken} outline disabled={obtainingToken}>
+              {obtainingToken ? 'Obtaining...' : 'Obtain FCM Token from Browser'}
+            </Button>
+          </div>
           <Form onSubmit={handleSubmit(onSubmit)}>
             <FormGroup>
               <Label for="fcmToken">FCM Token</Label>
-              <Input id="fcmToken" {...register('fcmToken', { required: 'FCM token is required' })} placeholder="FCM device token" />
+              <Controller
+                name="fcmToken"
+                control={control}
+                rules={{ required: 'FCM token is required' }}
+                render={({ field }) => <Input id="fcmToken" {...field} placeholder="FCM device token" />}
+              />
               {errors.fcmToken && <span className="text-danger">{errors.fcmToken.message}</span>}
             </FormGroup>
             <FormGroup>
               <Label for="platform">Platform</Label>
-              <Input type="select" id="platform" {...register('platform')}>
-                <option value="">Select platform (optional)</option>
-                <option value="ANDROID">Android</option>
-                <option value="IOS">iOS</option>
-                <option value="WEB">Web</option>
-              </Input>
+              <Controller
+                name="platform"
+                control={control}
+                render={({ field }) => (
+                  <Input type="select" id="platform" {...field}>
+                    <option value="">Select platform (optional)</option>
+                    <option value="ANDROID">Android</option>
+                    <option value="IOS">iOS</option>
+                    <option value="WEB">Web</option>
+                  </Input>
+                )}
+              />
             </FormGroup>
             <FormGroup>
               <Label for="userAgent">User Agent</Label>
-              <Input id="userAgent" {...register('userAgent')} placeholder="User agent / device name (optional)" />
+              <Controller
+                name="userAgent"
+                control={control}
+                render={({ field }) => <Input id="userAgent" {...field} placeholder="User agent / device name (optional)" />}
+              />
             </FormGroup>
             <Button type="submit" color="primary" disabled={registering}>
               {registering ? 'Registering...' : 'Register Device'}

@@ -47,13 +47,13 @@
     "messages": {
       "info": {
         "authenticated": {
-          "prefix": "Se deseja ",
-          "link": "entrar",
-          "suffix": ", utilize as seguintes contas padrões:<br/>- Administrador (usuário=\"admin\" and senha=\"admin\") <br/>- Usuário (usuário=\"user\" e senha=\"user\")."
+          "prefix": "Para testar o sistema de notificações push, ",
+          "link": "acesse a seção de dispositivos",
+          "suffix": " e registre seu navegador como dispositivo de teste."
         },
         "register": {
-          "noaccount": "Não possui uma conta ainda?",
-          "link": "Crie uma nova conta"
+          "noaccount": "Novo no sistema?",
+          "link": "Criar uma conta"
         }
       },
       "error": {
@@ -143,5 +143,5 @@
       "not.image": "File was expected to be an image but was found to be \"{{ fileType }}\""
     }
   },
-  "footer": "Este é o rodapé da página"
+  "footer": "Push Notification Manager - Sistema de gerenciamento e envio de notificações push"
 }

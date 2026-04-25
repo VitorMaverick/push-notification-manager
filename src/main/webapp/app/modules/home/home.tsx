@@ -12,10 +12,10 @@ export const Home = () => {
 
   return (
     <Row>
-      <Col md="3" className="pad">
+      <Col md="6" className="pad">
         <span className="hipster rounded" />
       </Col>
-      <Col md="9">
+      <Col md="6">
         <h1 className="display-4">
           <Translate contentKey="home.title">Welcome, Java Hipster!</Translate>
         </h1>
@@ -54,44 +54,70 @@ export const Home = () => {
           </div>
         )}
         <p>
-          <Translate contentKey="home.question">If you have any questions on JHipster:</Translate>
+          <Translate contentKey="home.question">How to use the system:</Translate>
         </p>
 
         <ul>
           <li>
-            <a href="https://www.jhipster.tech/" target="_blank" rel="noopener noreferrer">
-              <Translate contentKey="home.link.homepage">JHipster homepage</Translate>
-            </a>
+            <Link to="/device">
+              <Translate contentKey="home.link.devices">Device Management</Translate>
+            </Link>
+            {' - '}
+            <Translate contentKey="home.features.device_registration">Device registration with FCM tokens</Translate>
           </li>
           <li>
-            <a href="https://stackoverflow.com/tags/jhipster/info" target="_blank" rel="noopener noreferrer">
-              <Translate contentKey="home.link.stackoverflow">JHipster on Stack Overflow</Translate>
-            </a>
+            <Link to="/notification/fcm/send">
+              <Translate contentKey="home.link.send">Send Notifications</Translate>
+            </Link>
+            {' - '}
+            <Translate contentKey="home.features.notification_sending">Send personalized push notifications</Translate>
           </li>
           <li>
-            <a href="https://github.com/jhipster/generator-jhipster/issues?state=open" target="_blank" rel="noopener noreferrer">
-              <Translate contentKey="home.link.bugtracker">JHipster bug tracker</Translate>
-            </a>
+            <Link to="/notification/history">
+              <Translate contentKey="home.link.history">Notification History</Translate>
+            </Link>
+            {' - '}
+            <Translate contentKey="home.features.notification_history">Detailed notification history</Translate>
           </li>
           <li>
-            <a href="https://gitter.im/jhipster/generator-jhipster" target="_blank" rel="noopener noreferrer">
-              <Translate contentKey="home.link.chat">JHipster public chat room</Translate>
+            <a href="/swagger-ui/index.html" target="_blank" rel="noopener noreferrer">
+              <Translate contentKey="home.link.api">REST API</Translate>
             </a>
-          </li>
-          <li>
-            <a href="https://twitter.com/jhipster" target="_blank" rel="noopener noreferrer">
-              <Translate contentKey="home.link.follow">follow @jhipster on Twitter</Translate>
-            </a>
+            {' - '}
+            <Translate contentKey="home.features.real_time">Real-time notification support</Translate>
           </li>
         </ul>
 
-        <p>
-          <Translate contentKey="home.like">If you like JHipster, do not forget to give us a star on</Translate>{' '}
-          <a href="https://github.com/jhipster/generator-jhipster" target="_blank" rel="noopener noreferrer">
-            GitHub
-          </a>
-          !
-        </p>
+        <div className="mt-4">
+          <h4>
+            <Translate contentKey="home.features.title">Main Features:</Translate>
+          </h4>
+          <ul className="list-unstyled">
+            <li>
+              ✅ <Translate contentKey="home.features.device_registration">Device registration with FCM tokens</Translate>
+            </li>
+            <li>
+              ✅ <Translate contentKey="home.features.notification_sending">Send personalized push notifications</Translate>
+            </li>
+            <li>
+              ✅ <Translate contentKey="home.features.device_management">Complete device management</Translate>
+            </li>
+            <li>
+              ✅ <Translate contentKey="home.features.notification_history">Detailed notification history</Translate>
+            </li>
+            <li>
+              ✅ <Translate contentKey="home.features.real_time">Real-time notification support</Translate>
+            </li>
+          </ul>
+        </div>
+
+        <Alert color="info" className="mt-4">
+          <Translate contentKey="home.like">To get valid FCM tokens, use the</Translate>{' '}
+          <strong>
+            <Translate contentKey="home.github">Obtain Token from Browser</Translate>
+          </strong>{' '}
+          button in the Device Management section.
+        </Alert>
       </Col>
     </Row>
   );

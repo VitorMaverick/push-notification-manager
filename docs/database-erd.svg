@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <style>
+    .entity { fill:#e8f4fd; stroke:#2b73b9; stroke-width:2; rx:8; }
+    .entityHeader { fill:#2b73b9; stroke:#2b73b9; stroke-width:1; }
+    .entityTitle { font-family: Arial, Helvetica, sans-serif; font-size:16px; font-weight:bold; fill:#ffffff; }
+    .field { font-family: Arial, Helvetica, sans-serif; font-size:12px; fill:#333; }
+    .pk { font-weight:bold; fill:#2b73b9; }
+    .fk { font-style:italic; fill:#d32f2f; }
+    .relationship { stroke:#666; stroke-width:2; fill:none; marker-end:url(#arrowhead); }
+    .relationshipLabel { font-family: Arial, Helvetica, sans-serif; font-size:11px; fill:#666; }
+    .cardinality { font-family: Arial, Helvetica, sans-serif; font-size:10px; fill:#666; }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+    </marker>
+  </defs>
+
+  <!-- Device Entity -->
+  <g id="device">
+    <rect x="50" y="50" width="280" height="200" class="entity" />
+    <rect x="50" y="50" width="280" height="30" class="entityHeader" />
+    <text x="190" y="70" text-anchor="middle" class="entityTitle">Device</text>
+
+    <text x="60" y="95" class="field pk">• id: BIGINT (PK, IDENTITY)</text>
+    <text x="60" y="115" class="field">• fcm_token: VARCHAR(500) UNIQUE</text>
+    <text x="60" y="135" class="field">• device_name: VARCHAR(255)</text>
+    <text x="60" y="155" class="field">• type: VARCHAR(50) [ANDROID, IOS, WEB]</text>
+    <text x="60" y="175" class="field">• status:</text>
+    <text x="60" y="190" class="field">VARCHAR(50) [ACTIVE, INACTIVE, REVOKED]</text>
+    <text x="60" y="210" class="field">• registered_at: TIMESTAMP</text>
+    <text x="60" y="230" class="field">• last_used_at: TIMESTAMP</text>
+  </g>
+
+  <!-- Notification Entity -->
+  <g id="notification">
+    <rect x="520" y="50" width="320" height="260" class="entity" />
+    <rect x="520" y="50" width="320" height="30" class="entityHeader" />
+    <text x="680" y="70" text-anchor="middle" class="entityTitle">Notification</text>
+
+    <text x="530" y="95" class="field pk">• id: BIGINT (PK, SEQUENCE)</text>
+    <text x="530" y="115" class="field">• subject: VARCHAR(255)</text>
+    <text x="530" y="135" class="field">• body: VARCHAR(2000)</text>
+    <text x="530" y="155" class="field fk">• recipient_token: VARCHAR(255) → Device.fcm_token</text>
+    <text x="530" y="175" class="field">• fcm_message_id: VARCHAR(512)</text>
+    <text x="530" y="195" class="field">• status:</text>
+    <text x="530" y="210" class="field">VARCHAR(50) [PENDING, SENT, DELIVERED, FAILED]</text>
+    <text x="530" y="230" class="field">• channel: SMALLINT [PUSH, EMAIL, SMS]</text>
+    <text x="530" y="250" class="field">• sent_at: TIMESTAMP</text>
+    <text x="530" y="270" class="field">• delivered_at: TIMESTAMP</text>
+    <text x="530" y="290" class="field">• created_at: TIMESTAMP</text>
+  </g>
+
+  <!-- User Entity -->
+  <g id="user">
+    <rect x="50" y="300" width="280" height="220" class="entity" />
+    <rect x="50" y="300" width="280" height="30" class="entityHeader" />
+    <text x="190" y="320" text-anchor="middle" class="entityTitle">User (JHipster)</text>
+
+    <text x="60" y="345" class="field pk">• id: BIGINT (PK, SEQUENCE)</text>
+    <text x="60" y="365" class="field">• login: VARCHAR(50) UNIQUE</text>
+    <text x="60" y="385" class="field">• password_hash: VARCHAR(60)</text>
+    <text x="60" y="405" class="field">• first_name: VARCHAR(50)</text>
+    <text x="60" y="425" class="field">• last_name: VARCHAR(50)</text>
+    <text x="60" y="445" class="field">• email: VARCHAR(254) UNIQUE</text>
+    <text x="60" y="465" class="field">• activated: BOOLEAN</text>
+    <text x="60" y="485" class="field">• created_by: VARCHAR(50)</text>
+    <text x="60" y="505" class="field">• created_date: TIMESTAMP</text>
+  </g>
+
+  <!-- Authority Entity -->
+  <g id="authority">
+    <rect x="520" y="350" width="200" height="80" class="entity" />
+    <rect x="520" y="350" width="200" height="30" class="entityHeader" />
+    <text x="620" y="370" text-anchor="middle" class="entityTitle">Authority</text>
+
+    <text x="530" y="395" class="field pk">• name: VARCHAR(50) (PK)</text>
+  </g>
+
+  <!-- Relationships -->
+
+  <!-- Device → Notification (Logical relationship via FCM token) -->
+  <path d="M330 180 L520 170" class="relationship" />
+  <text x="425" y="145" class="relationshipLabel" text-anchor="middle">references</text>
+  <text x="340" y="200" class="cardinality">1</text>
+  <text x="505" y="190" class="cardinality">N</text>
+
+  <!-- User → Authority (Many-to-Many) -->
+  <path d="M330 420 L520 420" class="relationship" />
+  <text x="425" y="395" class="relationshipLabel" text-anchor="middle">user_authority</text>
+  <text x="345" y="440" class="cardinality">N</text>
+  <text x="505" y="447" class="cardinality">N</text>
+
+  <!-- Legend -->
+  <g id="legend">
+    <rect x="50" y="550" width="350" height="200" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1" rx="5" />
+    <text x="60" y="575" class="field" font-weight="bold">Legenda do Diagrama ER</text>
+
+    <text x="60" y="600" class="field pk">🔵 Campo Primary Key</text>
+    <text x="60" y="620" class="field fk">🔴 Campo Foreign Key / Reference</text>
+    <text x="60" y="640" class="field">⚫ Campo Regular</text>
+
+    <text x="60" y="665" class="field">→ Relacionamento 1:N</text>
+    <text x="60" y="685" class="field">↔ Relacionamento N:N (tabela de junção)</text>
+
+    <text x="60" y="710" class="field">📱 Push Notification Manager Database Schema</text>
+    <text x="60" y="730" class="field">PostgreSQL + Liquibase migrations</text>
+  </g>
+
+  <!-- Title -->
+  <text x="600" y="30" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="20" font-weight="bold" fill="#2b73b9">
+    Diagrama ER - Push Notification Manager
+  </text>
+</svg>
+

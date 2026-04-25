@@ -1,0 +1,141 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f0f7ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e9ecef;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cardGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f8f9fa;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="hexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4caf50;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2e7d32;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="2" dy="4" stdDeviation="6" flood-color="#00000020"/>
+    </filter>
+    <filter id="shadowLight" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#00000015"/>
+    </filter>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1a73e8" />
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#4caf50" />
+    </marker>
+    <marker id="arrowOrange" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ff9800" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGrad)" />
+
+  <!-- Card: Browser Client -->
+  <g filter="url(#shadow)">
+    <rect x="50" y="50" width="280" height="200" rx="12" fill="url(#cardGrad1)" stroke="#d0d7de" stroke-width="1"/>
+    <rect x="50" y="50" width="280" height="45" rx="12" fill="#e8f5e9" />
+    <rect x="50" y="83" width="280" height="12" fill="#e8f5e9" />
+    <text x="190" y="80" text-anchor="middle" font-family="Segoe UI, Arial" font-size="16" font-weight="bold" fill="#2e7d32">🌐 Browser Client</text>
+    <text x="70" y="115" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Service Worker</text>
+    <text x="70" y="135" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Firebase JS SDK</text>
+    <text x="70" y="155" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Obtenção de Token FCM</text>
+    <text x="70" y="175" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Exibição de Notificações</text>
+    <text x="70" y="195" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Envio de ACK</text>
+    <text x="70" y="220" font-family="Segoe UI, Arial" font-size="11" fill="#888" font-style="italic">React / TypeScript</text>
+  </g>
+
+  <!-- Card: Backend (Spring Boot) -->
+  <g filter="url(#shadow)">
+    <rect x="460" y="50" width="320" height="200" rx="12" fill="url(#cardGrad1)" stroke="#d0d7de" stroke-width="1"/>
+    <rect x="460" y="50" width="320" height="45" rx="12" fill="#e3f2fd" />
+    <rect x="460" y="83" width="320" height="12" fill="#e3f2fd" />
+    <text x="620" y="80" text-anchor="middle" font-family="Segoe UI, Arial" font-size="16" font-weight="bold" fill="#1565c0">⚙️ Backend Server</text>
+    <text x="480" y="115" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Spring Boot / JHipster</text>
+    <text x="480" y="135" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Arquitetura Hexagonal</text>
+    <text x="480" y="155" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Casos de Uso (Use Cases)</text>
+    <text x="480" y="175" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Portas e Adaptadores</text>
+    <text x="480" y="195" font-family="Segoe UI, Arial" font-size="12" fill="#555">• REST Controllers</text>
+    <text x="480" y="220" font-family="Segoe UI, Arial" font-size="11" fill="#888" font-style="italic">Java 21 / Maven / JPA</text>
+  </g>
+
+  <!-- Card: Firebase FCM -->
+  <g filter="url(#shadow)">
+    <rect x="870" y="50" width="280" height="200" rx="12" fill="url(#cardGrad1)" stroke="#d0d7de" stroke-width="1"/>
+    <rect x="870" y="50" width="280" height="45" rx="12" fill="#fff3e0" />
+    <rect x="870" y="83" width="280" height="12" fill="#fff3e0" />
+    <text x="1010" y="80" text-anchor="middle" font-family="Segoe UI, Arial" font-size="16" font-weight="bold" fill="#e65100">🔥 Firebase FCM</text>
+    <text x="890" y="115" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Servidor de Push</text>
+    <text x="890" y="135" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Entrega de Mensagens</text>
+    <text x="890" y="155" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Geração de Tokens</text>
+    <text x="890" y="175" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Retorno messageId</text>
+    <text x="890" y="195" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Roteamento para Dispositivos</text>
+    <text x="890" y="220" font-family="Segoe UI, Arial" font-size="11" fill="#888" font-style="italic">Google Cloud / HTTP v1 API</text>
+  </g>
+
+  <!-- Database Card -->
+  <g filter="url(#shadow)">
+    <rect x="460" y="330" width="320" height="130" rx="12" fill="url(#cardGrad1)" stroke="#d0d7de" stroke-width="1"/>
+    <rect x="460" y="330" width="320" height="38" rx="12" fill="#f3e5f5" />
+    <rect x="460" y="356" width="320" height="12" fill="#f3e5f5" />
+    <text x="620" y="355" text-anchor="middle" font-family="Segoe UI, Arial" font-size="14" font-weight="bold" fill="#6a1b9a">🗄️ Banco de Dados</text>
+    <text x="480" y="385" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Dispositivos (Device)</text>
+    <text x="480" y="405" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Notificações (PushNotification)</text>
+    <text x="480" y="425" font-family="Segoe UI, Arial" font-size="12" fill="#555">• Ciclo de vida: PENDING → SENT → DELIVERED</text>
+    <text x="480" y="445" font-family="Segoe UI, Arial" font-size="11" fill="#888" font-style="italic">PostgreSQL / H2</text>
+  </g>
+
+  <!-- Arrows -->
+  <path d="M330 130 L460 130" stroke="#1a73e8" stroke-width="2.5" fill="none" marker-end="url(#arrowBlue)" />
+  <text x="395" y="120" text-anchor="middle" font-family="Segoe UI, Arial" font-size="10" fill="#1a73e8" font-weight="bold">POST /api/devices</text>
+
+  <path d="M780 130 L870 130" stroke="#ff9800" stroke-width="2.5" fill="none" marker-end="url(#arrowOrange)" />
+  <text x="825" y="120" text-anchor="middle" font-family="Segoe UI, Arial" font-size="10" fill="#ff9800" font-weight="bold">send() via Admin SDK</text>
+
+  <path d="M620 250 L620 330" stroke="#6a1b9a" stroke-width="2.5" fill="none" marker-end="url(#arrowBlue)" stroke-dasharray="6,3" />
+  <text x="635" y="295" font-family="Segoe UI, Arial" font-size="10" fill="#6a1b9a" font-weight="bold">JPA persist/update</text>
+
+  <path d="M640 330 L640 255" stroke="#6a1b9a" stroke-width="2" fill="none" marker-end="url(#arrowBlue)" stroke-dasharray="4,3" />
+
+  <path d="M950 250 L330 250" stroke="#4caf50" stroke-width="2.5" fill="none" marker-end="url(#arrowGreen)" />
+  <text x="640" y="265" text-anchor="middle" font-family="Segoe UI, Arial" font-size="10" fill="#4caf50" font-weight="bold">Entrega da Notificação Push (FCM → Service Worker)</text>
+
+  <path d="M330 220 L460 220" stroke="#1a73e8" stroke-width="2" fill="none" marker-end="url(#arrowBlue)" stroke-dasharray="5,3" />
+  <text x="395" y="240" text-anchor="middle" font-family="Segoe UI, Arial" font-size="9" fill="#1a73e8">POST /api/ack</text>
+
+  <!-- Hexagonal Architecture Badge -->
+  <g filter="url(#shadowLight)">
+    <polygon points="620,0 670,20 670,60 620,80 570,60 570,20" fill="url(#hexGrad)" opacity="0.9" />
+    <text x="620" y="38" text-anchor="middle" font-family="Segoe UI, Arial" font-size="10" font-weight="bold" fill="#ffffff">Hexagonal</text>
+    <text x="620" y="52" text-anchor="middle" font-family="Segoe UI, Arial" font-size="9" fill="#e8f5e9">Architecture</text>
+  </g>
+
+  <!-- Legend / Footer -->
+  <rect x="50" y="520" width="1100" height="80" rx="8" fill="#ffffff" stroke="#d0d7de" stroke-width="1" filter="url(#shadowLight)" />
+  <text x="80" y="545" font-family="Segoe UI, Arial" font-size="14" font-weight="bold" fill="#333">Padrões Aplicados:</text>
+  
+  <rect x="80" y="560" width="18" height="18" rx="3" fill="#4caf50" />
+  <text x="105" y="575" font-family="Segoe UI, Arial" font-size="12" fill="#555">Ports &amp; Adapters</text>
+  
+  <rect x="240" y="560" width="18" height="18" rx="3" fill="#ff9800" />
+  <text x="265" y="575" font-family="Segoe UI, Arial" font-size="12" fill="#555">Builder</text>
+  
+  <rect x="360" y="560" width="18" height="18" rx="3" fill="#1a73e8" />
+  <text x="385" y="575" font-family="Segoe UI, Arial" font-size="12" fill="#555">Adapter</text>
+  
+  <rect x="490" y="560" width="18" height="18" rx="3" fill="#6a1b9a" />
+  <text x="515" y="575" font-family="Segoe UI, Arial" font-size="12" fill="#555">Factory / Mapper</text>
+  
+  <rect x="660" y="560" width="18" height="18" rx="3" fill="#d32f2f" />
+  <text x="685" y="575" font-family="Segoe UI, Arial" font-size="12" fill="#555">Exception Handler</text>
+  
+  <rect x="820" y="560" width="18" height="18" rx="3" fill="#0288d1" />
+  <text x="845" y="575" font-family="Segoe UI, Arial" font-size="12" fill="#555">Facade (Frontend)</text>
+  
+  <rect x="970" y="560" width="18" height="18" rx="3" fill="#e91e63" />
+  <text x="995" y="575" font-family="Segoe UI, Arial" font-size="12" fill="#555">Gateway (axios)</text>
+
+  <text x="80" y="595" font-family="Segoe UI, Arial" font-size="11" fill="#888">Frontend: React + TypeScript + Service Worker | Backend: Spring Boot + Java 21 + Arquitetura Hexagonal | FCM Integration</text>
+
+</svg>

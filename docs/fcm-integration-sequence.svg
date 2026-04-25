@@ -1,4 +1,3 @@
-
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="380" viewBox="0 0 900 380">
   <style>
@@ -75,3 +74,4 @@
   <!-- Footer caption -->
   <text x="20" y="360" class="note">Figura 1 — Diagrama de sequência: fluxo de envio e confirmação de notificações via Firebase Cloud Messaging.</text>
 </svg>
+
