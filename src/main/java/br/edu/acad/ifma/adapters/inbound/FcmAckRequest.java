@@ -7,11 +7,20 @@ import java.time.Instant;
  */
 public class FcmAckRequest {
 
+    private Long notificationId;
     private String messageId;
     private String token;
     private Instant receivedAt;
 
     public FcmAckRequest() {}
+
+    public Long getNotificationId() {
+        return notificationId;
+    }
+
+    public void setNotificationId(Long notificationId) {
+        this.notificationId = notificationId;
+    }
 
     public String getMessageId() {
         return messageId;

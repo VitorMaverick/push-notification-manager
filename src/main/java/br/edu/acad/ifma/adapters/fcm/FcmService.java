@@ -90,4 +90,21 @@ public class FcmService implements PushSenderPort {
             throw new PushSendingException("FCM send failed: " + e.getMessage(), e);
         }
     }
+
+    @Override
+    public String sendPushNotification(FcmToken token, NotificationTitle title, NotificationBody body, Map<String, String> data) {
+        try {
+            NotificationMessageTO msg = NotificationMessageTO.builder()
+                .title(title == null ? null : title.value())
+                .body(body == null ? null : body.value())
+                .dataMap(data)
+                .build();
+            return sendToToken(token.value(), msg);
+        } catch (FcmClientException e) {
+            // convert adapter-specific exception to domain-level PushSendingException
+            throw new PushSendingException("FCM send failed: " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new PushSendingException("FCM send failed: " + e.getMessage(), e);
+        }
+    }
 }

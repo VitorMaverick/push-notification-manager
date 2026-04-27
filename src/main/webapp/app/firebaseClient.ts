@@ -19,6 +19,7 @@ const VAPID_KEY = 'BLY_UGwu_ah4bRGpEWD_dYxX5AxiHMQVKPIAvrnzsiV_cdmj-MiA1BIKa8zO4
 
 let firebaseInitialized = false;
 let appInstance: any = null;
+let fcmListenerRegistered = false;
 
 function ensureInitialized() {
   if (!firebaseInitialized) {
@@ -51,10 +52,14 @@ export async function requestFcmTokenFromBrowser(): Promise<string> {
   return token;
 }
 
-// Optional helper to listen to foreground messages
+// Optional helper to listen to foreground messages — registers only once
 export function onFcmMessage(listener: (payload: any) => void) {
   ensureInitialized();
   const messaging = getMessaging(appInstance);
+  if (fcmListenerRegistered) {
+    return;
+  }
+  fcmListenerRegistered = true;
   onMessage(messaging, payload => {
     // Always log the payload first so the 'Foreground message' appears in console/logs
     try {
@@ -75,14 +80,18 @@ export function onFcmMessage(listener: (payload: any) => void) {
         toast.info(`${title}: ${body}`);
 
         // send ack to backend (non-blocking)
+        const rawNotificationId = (payload as any)?.data?.notificationId;
+        const notificationId = rawNotificationId ? Number(rawNotificationId) : null;
         const messageId = (payload && (payload.messageId || (payload as any).data?.messageId)) || null;
-        const ack = { messageId, token: payload?.from || null, receivedAt: new Date().toISOString() };
+        const ack = { notificationId, messageId, token: payload?.from || null, receivedAt: new Date().toISOString() };
+        console.error(ack);
         fetch('/api/v1/notifications/internal/fcm/ack', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(ack),
         }).catch(() => {
           // ignore ACK errors
+          console.error(`error`);
         });
       }
     } catch (e) {
