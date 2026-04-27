@@ -297,14 +297,6 @@
             <exclusions>
                 <!-- Remove observability/tracing integrations that cause ClassNotFoundExceptions -->
                 <exclusion>
-                    <groupId>io.opencensus</groupId>
-                    <artifactId>opencensus-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.opencensus</groupId>
-                    <artifactId>opencensus-contrib-http-util</artifactId>
-                </exclusion>
-                <exclusion>
                     <groupId>io.opentelemetry</groupId>
                     <artifactId>opentelemetry-api</artifactId>
                 </exclusion>
@@ -313,21 +305,6 @@
                     <artifactId>grpc-context</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>io.opencensus</groupId>
-            <artifactId>opencensus-api</artifactId>
-            <version>0.31.1</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opencensus</groupId>
-            <artifactId>opencensus-impl</artifactId>
-            <version>0.31.1</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opencensus</groupId>
-            <artifactId>opencensus-contrib-http-util</artifactId>
-            <version>0.31.1</version>
         </dependency>
     </dependencies>
 

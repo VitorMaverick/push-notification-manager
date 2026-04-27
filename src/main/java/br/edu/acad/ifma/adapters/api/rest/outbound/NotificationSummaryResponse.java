@@ -6,9 +6,10 @@ import java.time.Instant;
 public class NotificationSummaryResponse {
 
     private Long id;
+    private String title;
     private NotificationStatus status;
+    private String recipientToken;
     private String fcmMessageId;
-    private Instant sentAt;
     private Instant createdAt;
 
     public Long getId() {
@@ -19,6 +20,14 @@ public class NotificationSummaryResponse {
         this.id = id;
     }
 
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     public NotificationStatus getStatus() {
         return status;
     }
@@ -27,20 +36,20 @@ public class NotificationSummaryResponse {
         this.status = status;
     }
 
+    public String getRecipientToken() {
+        return recipientToken;
+    }
+
+    public void setRecipientToken(String recipientToken) {
+        this.recipientToken = recipientToken;
+    }
+
     public String getFcmMessageId() {
         return fcmMessageId;
     }
 
     public void setFcmMessageId(String fcmMessageId) {
         this.fcmMessageId = fcmMessageId;
-    }
-
-    public Instant getSentAt() {
-        return sentAt;
-    }
-
-    public void setSentAt(Instant sentAt) {
-        this.sentAt = sentAt;
     }
 
     public Instant getCreatedAt() {

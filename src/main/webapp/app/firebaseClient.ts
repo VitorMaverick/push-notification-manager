@@ -79,6 +79,12 @@ export function onFcmMessage(listener: (payload: any) => void) {
         // show a non-blocking toast
         toast.info(`${title}: ${body}`);
 
+        // native browser notification (works even when tab is not focused)
+        if (Notification.permission === 'granted') {
+          // eslint-disable-next-line no-new
+          new Notification(title, { body });
+        }
+
         // send ack to backend (non-blocking)
         const rawNotificationId = (payload as any)?.data?.notificationId;
         const notificationId = rawNotificationId ? Number(rawNotificationId) : null;

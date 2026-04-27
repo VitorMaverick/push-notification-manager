@@ -22,9 +22,10 @@ public abstract class NotificationPresenter {
     public static NotificationSummaryResponse toSummary(PushNotification n) {
         NotificationSummaryResponse r = new NotificationSummaryResponse();
         r.setId(n.getId());
+        r.setTitle(n.getTitle().value());
         r.setStatus(n.getStatus());
+        r.setRecipientToken(n.getRecipientToken().value());
         r.setFcmMessageId(n.getFcmMessageId());
-        r.setSentAt(n.getSentAt());
         r.setCreatedAt(n.getCreatedAt());
         return r;
     }
