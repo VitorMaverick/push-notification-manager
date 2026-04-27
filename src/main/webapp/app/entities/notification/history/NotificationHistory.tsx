@@ -11,8 +11,6 @@ interface NotificationSummary {
   status: NotificationStatus;
   recipientToken?: string;
   createdAt?: string;
-  sentAt?: string;
-  deliveredAt?: string;
 }
 
 const STATUS_BADGE: Record<NotificationStatus, string> = {
@@ -29,7 +27,6 @@ const NotificationHistory = () => {
   const [status, setStatus] = useState('');
   const [deviceToken, setDeviceToken] = useState('');
   const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
@@ -42,7 +39,6 @@ const NotificationHistory = () => {
       if (status) params.status = status;
       if (deviceToken) params.deviceToken = deviceToken;
       if (fromDate) params.fromDate = new Date(fromDate).toISOString();
-      if (toDate) params.toDate = new Date(toDate).toISOString();
       const res = await getHistory(params);
       setNotifications(res.data.content || []);
       setTotalPages(res.data.totalPages || 0);
@@ -76,9 +72,6 @@ const NotificationHistory = () => {
         </div>
         <div className="col-md-2">
           <Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} />
-        </div>
-        <div className="col-md-2">
-          <Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} />
         </div>
         <div className="col-md-1">
           <Input
@@ -118,14 +111,12 @@ const NotificationHistory = () => {
             <th>Status</th>
             <th>Token</th>
             <th>Created At</th>
-            <th>Sent At</th>
-            <th>Delivered At</th>
           </tr>
         </thead>
         <tbody>
           {notifications.length === 0 ? (
             <tr>
-              <td colSpan={7} className="text-center">
+              <td colSpan={5} className="text-center">
                 No notifications found.
               </td>
             </tr>
@@ -141,8 +132,6 @@ const NotificationHistory = () => {
                   {n.recipientToken ? n.recipientToken.substring(0, 12) + '…' : '—'}
                 </td>
                 <td>{n.createdAt ? new Date(n.createdAt).toLocaleString() : '—'}</td>
-                <td>{n.sentAt ? new Date(n.sentAt).toLocaleString() : '—'}</td>
-                <td>{n.deliveredAt ? new Date(n.deliveredAt).toLocaleString() : '—'}</td>
               </tr>
             ))
           )}

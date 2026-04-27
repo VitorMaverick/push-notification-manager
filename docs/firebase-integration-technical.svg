@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="600" viewBox="0 0 1000 600">
+  <style>
+    .client { fill:#e8f5e8; stroke:#2e7d32; stroke-width:2; rx:8; }
+    .firebase { fill:#fff3e0; stroke:#f57c00; stroke-width:2; rx:8; }
+    .server { fill:#e3f2fd; stroke:#1976d2; stroke-width:2; rx:8; }
+    .actorText { font-family: Arial, Helvetica, sans-serif; font-size:14px; font-weight:bold; fill:#333; }
+    .request { stroke:#4caf50; stroke-width:3; fill:none; marker-end:url(#arrowhead); }
+    .response { stroke:#f44336; stroke-width:3; fill:none; marker-end:url(#arrowhead); stroke-dasharray:5,5; }
+    .stepText { font-family: Arial, Helvetica, sans-serif; font-size:12px; fill:#333; }
+    .apiText { font-family: Arial, Helvetica, sans-serif; font-size:11px; fill:#666; font-style:italic; }
+    .dataText { font-family: Arial, Helvetica, sans-serif; font-size:10px; fill:#555; }
+    .badge { fill:#2196f3; rx:12; }
+    .badgeText { font-family: Arial, Helvetica, sans-serif; font-size:12px; fill:#ffffff; font-weight:bold; }
+  </style>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="12" markerHeight="8" refX="12" refY="4" orient="auto">
+      <polygon points="0 0, 12 4, 0 8" fill="#666" />
+    </marker>
+  </defs>
+
+  <!-- Client (Browser) -->
+  <g id="client">
+    <rect x="50" y="50" width="180" height="80" class="client" />
+    <text x="140" y="75" text-anchor="middle" class="actorText">Browser Client</text>
+    <text x="140" y="95" text-anchor="middle" class="actorText">(Frontend)</text>
+  </g>
+
+  <!-- Firebase Cloud Messaging -->
+  <g id="firebase">
+    <rect x="400" y="50" width="200" height="80" class="firebase" />
+    <text x="500" y="75" text-anchor="middle" class="actorText">Firebase Cloud Messaging</text>
+    <text x="500" y="95" text-anchor="middle" class="actorText">(FCM Service)</text>
+  </g>
+
+  <!-- Backend Server -->
+  <g id="server">
+    <rect x="750" y="50" width="180" height="80" class="server" />
+    <text x="840" y="75" text-anchor="middle" class="actorText">Backend Server</text>
+    <text x="840" y="95" text-anchor="middle" class="actorText">(Spring Boot)</text>
+  </g>
+
+  <!-- Step 1: Token Registration -->
+  <g id="step1">
+    <rect x="20" y="180" width="30" height="30" class="badge" />
+    <text x="35" y="200" text-anchor="middle" class="badgeText">1</text>
+    <text x="60" y="200" class="stepText">Token Registration</text>
+
+    <!-- Client to Firebase -->
+    <path d="M230 90 L400 90" class="request" />
+    <text x="315" y="80" class="apiText">POST /fcm/connect/subscribe</text>
+
+    <!-- Request Data -->
+    <rect x="240" y="100" width="140" height="60" fill="#f1f8e9" stroke="#4caf50" stroke-width="1" rx="3" />
+    <text x="250" y="115" class="dataText" font-weight="bold">Request Body:</text>
+    <text x="250" y="130" class="dataText">• senderId: "123456789"</text>
+    <text x="250" y="145" class="dataText">• subscription_token: "APA91b..."</text>
+    <text x="250" y="160" class="dataText">• authorizedEntity: "project-id"</text>
+
+    <!-- Firebase to Client -->
+    <path d="M600 90 L780 90" class="response" />
+    <text x="690" y="80" class="apiText">Response (200 OK)</text>
+
+    <!-- Response Data -->
+    <rect x="610" y="100" width="140" height="40" fill="#ffebee" stroke="#f44336" stroke-width="1" rx="3" />
+    <text x="620" y="115" class="dataText" font-weight="bold">Response:</text>
+    <text x="620" y="130" class="dataText">• token: "fcm_token_here"</text>
+    <text x="620" y="140" class="dataText">• pushSet: "projects/project-id/messages"</text>
+  </g>
+
+  <!-- Step 2: Send Notification -->
+  <g id="step2">
+    <rect x="20" y="280" width="30" height="30" class="badge" />
+    <text x="35" y="300" text-anchor="middle" class="badgeText">2</text>
+    <text x="60" y="300" class="stepText">Send Push Notification</text>
+
+    <!-- Server to Firebase -->
+    <path d="M930 90 L600 90" class="request" />
+    <text x="765" y="80" class="apiText">POST /v1/projects/{project-id}/messages:send</text>
+
+    <!-- Request Data -->
+    <rect x="650" y="200" width="300" height="120" fill="#f1f8e9" stroke="#4caf50" stroke-width="1" rx="3" />
+    <text x="660" y="215" class="dataText" font-weight="bold">Authorization:</text>
+    <text x="660" y="230" class="dataText">Bearer {access_token}</text>
+    <text x="660" y="245" class="dataText" font-weight="bold">Request Body:</text>
+    <text x="660" y="260" class="dataText">{</text>
+    <text x="675" y="275" class="dataText">"message": {</text>
+    <text x="690" y="290" class="dataText">"token": "fcm_token_here",</text>
+    <text x="690" y="305" class="dataText">"notification": {</text>
+    <text x="705" y="320" class="dataText">"title": "Push Title",</text>
+    <text x="705" y="335" class="dataText">"body": "Push Message"</text>
+    <text x="690" y="350" class="dataText">},</text>
+    <text x="690" y="365" class="dataText">"data": {"key": "value"}</text>
+    <text x="675" y="380" class="dataText">}</text>
+    <text x="660" y="395" class="dataText">}</text>
+
+    <!-- Firebase to Server -->
+    <path d="M400 90 L230 90" class="response" />
+    <text x="315" y="80" class="apiText">Response (200 OK)</text>
+
+    <!-- Response Data -->
+    <rect x="50" y="400" width="300" height="80" fill="#ffebee" stroke="#f44336" stroke-width="1" rx="3" />
+    <text x="60" y="415" class="dataText" font-weight="bold">Response:</text>
+    <text x="60" y="430" class="dataText">{</text>
+    <text x="75" y="445" class="dataText">"name": "projects/project-id/messages/123456789"</text>
+    <text x="60" y="460" class="dataText">}</text>
+    <text x="60" y="475" class="dataText" font-weight="bold">Headers:</text>
+    <text x="60" y="490" class="dataText">• message_id: "projects/project-id/messages/123456789"</text>
+  </g>
+
+  <!-- Step 3: Message Delivery -->
+  <g id="step3">
+    <rect x="20" y="520" width="30" height="30" class="badge" />
+    <text x="35" y="540" text-anchor="middle" class="badgeText">3</text>
+    <text x="60" y="540" class="stepText">Message Delivery to Device</text>
+
+    <!-- Firebase to Client -->
+    <path d="M600 90 L230 90" class="request" />
+    <text x="415" y="80" class="apiText">Push Message Delivery</text>
+
+    <!-- Delivery Data -->
+    <rect x="240" y="500" width="300" height="80" fill="#e8f5e8" stroke="#4caf50" stroke-width="1" rx="3" />
+    <text x="250" y="515" class="dataText" font-weight="bold">Push Payload Received:</text>
+    <text x="250" y="530" class="dataText">• from: "project-id"</text>
+    <text x="250" y="545" class="dataText">• notification: {title, body}</text>
+    <text x="250" y="560" class="dataText">• data: {custom_data}</text>
+    <text x="250" y="575" class="dataText">• messageId: "projects/project-id/messages/123456789"</text>
+  </g>
+
+  <!-- Technical Details -->
+  <g id="details">
+    <rect x="650" y="450" width="320" height="120" fill="#f5f5f5" stroke="#bdbdbd" stroke-width="1" rx="5" />
+    <text x="660" y="470" class="dataText" font-weight="bold">Firebase Integration Details:</text>
+    <text x="660" y="485" class="dataText">• Project ID: Google Cloud Project</text>
+    <text x="660" y="500" class="dataText">• Service Account: JSON credentials</text>
+    <text x="660" y="515" class="dataText">• OAuth2 Flow: Service Account → Access Token</text>
+    <text x="660" y="530" class="dataText">• FCM Endpoint: fcm.googleapis.com/v1</text>
+    <text x="660" y="545" class="dataText">• VAPID Key: Web Push Public Key</text>
+    <text x="660" y="560" class="dataText">• Token Format: FCM Registration Token</text>
+  </g>
+
+  <!-- Title -->
+  <text x="500" y="25" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="18" font-weight="bold" fill="#333">
+    Firebase Cloud Messaging Integration Flow
+  </text>
+  <text x="500" y="45" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#666">
+    Technical Details: Token Generation & Push Notification Delivery
+  </text>
+</svg>
+

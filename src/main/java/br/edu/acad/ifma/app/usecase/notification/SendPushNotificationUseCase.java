@@ -9,11 +9,11 @@ import br.edu.acad.ifma.app.domain.shared.exception.PushSendingException;
 import br.edu.acad.ifma.app.port.NotificationRepositoryPort;
 import br.edu.acad.ifma.app.port.PushSenderPort;
 import java.time.Instant;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@Transactional
 public class SendPushNotificationUseCase {
 
     private final NotificationRepositoryPort notificationRepository;
@@ -39,7 +39,8 @@ public class SendPushNotificationUseCase {
         notification = notificationRepository.save(notification);
 
         try {
-            String fcmId = pushSender.sendPushNotification(token, title, body);
+            Map<String, String> data = Map.of("notificationId", notification.getId().toString());
+            String fcmId = pushSender.sendPushNotification(token, title, body, data);
             notification.markSent(fcmId);
         } catch (PushSendingException e) {
             notification.markFailed(e.getMessage());

@@ -293,7 +293,18 @@
         <dependency>
             <groupId>com.google.firebase</groupId>
             <artifactId>firebase-admin</artifactId>
-            <version>9.1.1</version>
+            <version>9.4.3</version>
+            <exclusions>
+                <!-- Remove observability/tracing integrations that cause ClassNotFoundExceptions -->
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>grpc-context</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 

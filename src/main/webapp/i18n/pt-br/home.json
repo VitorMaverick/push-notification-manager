@@ -1,19 +1,27 @@
 {
   "home": {
-    "title": "Bem vindo, Java Hipster!",
-    "subtitle": "Esta é a página principal",
+    "title": "Push Notification Manager",
+    "subtitle": "Gerencie e envie notificações push para dispositivos",
     "logged": {
       "message": "Você está logado como \"{{username}}\"."
     },
-    "question": "Em caso de dúvida sobre o JHipster:",
+    "question": "Como usar o sistema:",
     "link": {
-      "homepage": "Página principal JHipster",
-      "stackoverflow": "JHipster no Stack Overflow",
-      "bugtracker": "JHipster bug tracker",
-      "chat": "Sala de bate-papo pública JHipster",
-      "follow": "siga @jhipster no Twitter"
+      "devices": "Gerenciar Dispositivos",
+      "send": "Enviar Notificações",
+      "history": "Histórico de Notificações",
+      "docs": "Documentação Técnica",
+      "api": "API REST"
     },
-    "like": "Se você gosta do JHipster, não se esqueça de avaliar no",
-    "github": "GitHub"
+    "like": "Para obter tokens FCM válidos, use o botão",
+    "github": "Obter Token do Browser",
+    "features": {
+      "title": "Funcionalidades Principais:",
+      "device_registration": "Registro de dispositivos com tokens FCM",
+      "notification_sending": "Envio de notificações push personalizadas",
+      "device_management": "Gerenciamento completo de dispositivos",
+      "notification_history": "Histórico detalhado de notificações",
+      "real_time": "Suporte a notificações em tempo real"
+    }
   }
 }

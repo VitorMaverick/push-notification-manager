@@ -16,6 +16,8 @@ import br.edu.acad.ifma.app.usecase.notification.NotificationHistoryQuery;
 import br.edu.acad.ifma.app.usecase.notification.SendPushNotificationCommand;
 import br.edu.acad.ifma.app.usecase.notification.SendPushNotificationUseCase;
 import jakarta.validation.Valid;
+
+import java.io.Console;
 import java.time.Instant;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,10 +31,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @RestController
 @RequestMapping("/api/v1/notifications")
 @Validated
 public class NotificationController {
+
+    private static final Logger logger = LoggerFactory.getLogger(NotificationController.class);
 
     private final SendPushNotificationUseCase sendUseCase;
     private final GetNotificationHistoryUseCase historyUseCase;
@@ -80,17 +87,29 @@ public class NotificationController {
         return ResponseEntity.ok(NotificationPresenter.toDetail(getByIdUseCase.execute(id)));
     }
 
-    // New ACK endpoint: receives FCM delivery ack information and marks notification delivered when found
     @PostMapping("/internal/fcm/ack")
     public ResponseEntity<Void> ack(@RequestBody FcmAckRequest request) {
-        if (request.getMessageId() != null) {
-            notificationRepository
-                .findByFcmMessageId(request.getMessageId())
-                .ifPresent(n -> {
-                    n.markDelivered();
-                    notificationRepository.save(n);
-                });
-        }
+        logger.info("ACK received notificationId={} messageId={}", request.getNotificationId(), request.getMessageId());
+        var notificationOpt = resolveNotification(request);
+        notificationOpt.ifPresent(n -> {
+            logger.info("Noification status: {}", n.getStatus());
+            if (n.getStatus() != NotificationStatus.DELIVERED) {
+                n.markDelivered();
+                notificationRepository.save(n);
+                logger.info("Notification {} marked as delivered", n.getId());
+            }
+        });
         return ResponseEntity.ok().build();
+    }
+
+    private java.util.Optional<PushNotification> resolveNotification(FcmAckRequest request) {
+        if (request.getNotificationId() != null) {
+            return notificationRepository.findById(request.getNotificationId());
+        }
+        if (request.getMessageId() != null) {
+            return notificationRepository.findByFcmMessageId(request.getMessageId());
+        }
+        logger.warn("ACK received with no notificationId or messageId");
+        return java.util.Optional.empty();
     }
 }

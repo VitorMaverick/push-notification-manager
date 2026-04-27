@@ -1,7 +1,7 @@
 package br.edu.acad.ifma.adapters.model;
 
+import br.edu.acad.ifma.adapters.auth.model.NotificationChannel;
 import br.edu.acad.ifma.app.domain.notification.NotificationStatus;
-import br.edu.acad.ifma.domain.NotificationChannel;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

@@ -47,13 +47,13 @@
     "messages": {
       "info": {
         "authenticated": {
-          "prefix": "If you want to ",
-          "link": "sign in",
-          "suffix": ", you can try the default accounts:<br/>- Administrator (login=\"admin\" and password=\"admin\") <br/>- User (login=\"user\" and password=\"user\")."
+          "prefix": "To test the push notification system, ",
+          "link": "access the devices section",
+          "suffix": " and register your browser as a test device."
         },
         "register": {
-          "noaccount": "You don't have an account yet?",
-          "link": "Register a new account"
+          "noaccount": "New to the system?",
+          "link": "Create an account"
         }
       },
       "error": {
@@ -143,5 +143,5 @@
       "not.image": "File was expected to be an image but was found to be \"{{ fileType }}\""
     }
   },
-  "footer": "This is your footer"
+  "footer": "Push Notification Manager - Push notification management and delivery system"
 }

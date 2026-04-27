@@ -30,13 +30,24 @@ class SendPushNotificationUseCaseTest {
         pushSender = mock(PushSenderPort.class);
         useCase = new SendPushNotificationUseCase(notificationRepository, pushSender);
 
-        // save returns the same notification passed in (simulating a saved version)
-        when(notificationRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        // save returns the same notification passed in (simulating a saved version) with ID set
+        when(notificationRepository.save(any())).thenAnswer(inv -> {
+            PushNotification n = inv.getArgument(0);
+            // Simulate setting ID
+            try {
+                java.lang.reflect.Field idField = PushNotification.class.getDeclaredField("id");
+                idField.setAccessible(true);
+                idField.set(n, 1L);
+            } catch (Exception e) {
+                // ignore
+            }
+            return n;
+        });
     }
 
     @Test
     void happy_path_pending_to_sent() {
-        when(pushSender.sendPushNotification(any(), any(), any())).thenReturn("fcm-id-001");
+        when(pushSender.sendPushNotification(any(), any(), any(), any())).thenReturn("fcm-id-001");
 
         SendPushNotificationCommand cmd = new SendPushNotificationCommand(VALID_TOKEN, "Hello", "World");
         PushNotification result = useCase.execute(cmd);
@@ -48,7 +59,7 @@ class SendPushNotificationUseCaseTest {
     @Test
     void fcm_exception_marks_failed_and_rethrows() {
         PushSendingException ex = new PushSendingException("FCM send failed: timeout", new RuntimeException("timeout"));
-        when(pushSender.sendPushNotification(any(), any(), any())).thenThrow(ex);
+        when(pushSender.sendPushNotification(any(), any(), any(), any())).thenThrow(ex);
 
         SendPushNotificationCommand cmd = new SendPushNotificationCommand(VALID_TOKEN, "Hello", "World");
 

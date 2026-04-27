@@ -8,8 +8,8 @@ import 'react-toastify/dist/ReactToastify.css';
 
 type FormValues = {
   token: string;
-  titulo?: string;
-  corpo?: string;
+  title: string;
+  body: string;
   dados?: string;
 };
 
@@ -21,7 +21,7 @@ const FcmSend = () => {
     setValue,
     formState: { errors },
   } = useForm<FormValues>({
-    defaultValues: { token: '', titulo: '', corpo: '', dados: '' },
+    defaultValues: { token: '', title: '', body: '', dados: '' },
   });
   const [loading, setLoading] = React.useState(false);
   const [logs, setLogs] = React.useState<string[]>([]);
@@ -51,6 +51,11 @@ const FcmSend = () => {
   };
 
   const onSubmit = async (data: FormValues) => {
+    console.error('🔍 Form data received:', data);
+    console.error('🔍 Title value:', data.title);
+    console.error('🔍 Body value:', data.body);
+    console.error('🔍 Token value:', data.token);
+
     addLog('onSubmit called with ' + JSON.stringify(data));
     setLoading(true);
     try {
@@ -67,10 +72,11 @@ const FcmSend = () => {
       // Backend expects deviceToken/title/body field names
       const payload = {
         deviceToken: data.token,
-        title: data.titulo,
-        body: data.corpo,
+        title: data.title,
+        body: data.body,
         dados: parsedDados,
       };
+      console.error('📤 Payload being sent:', payload);
       addLog('Sending payload ' + JSON.stringify(payload));
       const resp = await NotificationService.sendFcm(payload);
       addLog('Send response: ' + JSON.stringify(resp));
@@ -106,20 +112,24 @@ const FcmSend = () => {
           {errors.token && <span className="text-danger">{errors.token.message}</span>}
         </FormGroup>
         <FormGroup>
-          <Label for="titulo">Title</Label>
+          <Label for="title">Title</Label>
           <Controller
-            name="titulo"
+            name="title"
             control={control}
-            render={({ field }) => <Input id="titulo" {...field} placeholder="Notification title" />}
+            rules={{ required: 'Title is required' }}
+            render={({ field }) => <Input id="title" {...field} placeholder="Notification title" />}
           />
+          {errors.title && <span className="text-danger">{errors.title.message}</span>}
         </FormGroup>
         <FormGroup>
-          <Label for="corpo">Body</Label>
+          <Label for="body">Body</Label>
           <Controller
-            name="corpo"
+            name="body"
             control={control}
-            render={({ field }) => <Input id="corpo" {...field} placeholder="Notification body" />}
+            rules={{ required: 'Body is required' }}
+            render={({ field }) => <Input id="body" {...field} placeholder="Notification body" />}
           />
+          {errors.body && <span className="text-danger">{errors.body.message}</span>}
         </FormGroup>
         <FormGroup>
           <Label for="dados">Data (JSON)</Label>
