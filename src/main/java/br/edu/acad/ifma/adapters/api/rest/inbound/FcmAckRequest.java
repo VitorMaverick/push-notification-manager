@@ -1,4 +1,4 @@
-package br.edu.acad.ifma.adapters.inbound;
+package br.edu.acad.ifma.adapters.api.rest.inbound;
 
 import java.time.Instant;
 

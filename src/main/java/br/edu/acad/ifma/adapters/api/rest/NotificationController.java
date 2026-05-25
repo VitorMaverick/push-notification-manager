@@ -1,11 +1,11 @@
 package br.edu.acad.ifma.adapters.api.rest;
 
+import br.edu.acad.ifma.adapters.api.rest.inbound.FcmAckRequest;
 import br.edu.acad.ifma.adapters.api.rest.inbound.SendNotificationRequest;
 import br.edu.acad.ifma.adapters.api.rest.outbound.NotificationDetailResponse;
 import br.edu.acad.ifma.adapters.api.rest.outbound.NotificationResponse;
 import br.edu.acad.ifma.adapters.api.rest.outbound.NotificationSummaryResponse;
 import br.edu.acad.ifma.adapters.api.rest.presenter.NotificationPresenter;
-import br.edu.acad.ifma.adapters.inbound.FcmAckRequest;
 import br.edu.acad.ifma.app.domain.notification.NotificationStatus;
 import br.edu.acad.ifma.app.domain.notification.PushNotification;
 import br.edu.acad.ifma.app.port.NotificationRepositoryPort;
@@ -16,9 +16,9 @@ import br.edu.acad.ifma.app.usecase.notification.NotificationHistoryQuery;
 import br.edu.acad.ifma.app.usecase.notification.SendPushNotificationCommand;
 import br.edu.acad.ifma.app.usecase.notification.SendPushNotificationUseCase;
 import jakarta.validation.Valid;
-
-import java.io.Console;
 import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -30,9 +30,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/v1/notifications")
