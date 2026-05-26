@@ -25,9 +25,9 @@ public class SecurityConfiguration {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/management/health/**", "/management/info").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
                 .requestMatchers("/api/**").authenticated()
-                .requestMatchers("/management/**").hasAuthority("ROLE_ADMIN")
+                .requestMatchers("/actuator/**").hasAuthority("ROLE_ADMIN")
                 .anyRequest().authenticated()
             )
             .oauth2ResourceServer(rs -> rs.jwt(withDefaults()));

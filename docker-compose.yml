@@ -24,7 +24,7 @@ services:
       POSTGRES_USER: device
       POSTGRES_PASSWORD: device
     ports:
-      - '5432:5432'
+      - '5434:5432'
     volumes:
       - device-db-data:/var/lib/postgresql/data
     healthcheck:
@@ -86,7 +86,7 @@ services:
       NOTIFICATION_DB_USER: notification
       NOTIFICATION_DB_PASS: notification
       JWT_BASE64_SECRET: ${JWT_BASE64_SECRET}
-      FIREBASE_SERVICE_ACCOUNT_KEY: /secrets/firebase-service-account.json
+      FIREBASE_SERVICE_ACCOUNT_KEY: file:/secrets/firebase-service-account.json
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
