@@ -10,20 +10,15 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
   flyway:
     enabled: false
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          base64-secret: dGVzdC1zZWNyZXQta2V5LXRoYXQtaXMtYXQtbGVhc3QtMjU2LWJpdHMtbG9uZy1mb3ItaG1hYy1zaGEtMjU2
   rabbitmq:
     host: localhost
     port: 5672
     username: guest
     password: guest
     virtual-host: /
-    listener:
-      simple:
-        auto-startup: false
 
-firebase:
-  service-account-key: classpath:firebase-service-account-test.json
+jhipster:
+  security:
+    authentication:
+      jwt:
+        base64-secret: dGVzdC1zZWNyZXQta2V5LXRoYXQtaXMtYXQtbGVhc3QtMjU2LWJpdHMtbG9uZy1mb3ItaG1hYy1zaGEtMjU2
