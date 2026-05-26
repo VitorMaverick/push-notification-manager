@@ -4,6 +4,17 @@ server:
 spring:
   application:
     name: notification-service
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USER:guest}
+    password: ${RABBITMQ_PASS:guest}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: false
   datasource:
     url: ${NOTIFICATION_DB_URL:jdbc:postgresql://localhost:5433/notification_db}
     username: ${NOTIFICATION_DB_USER:notification}

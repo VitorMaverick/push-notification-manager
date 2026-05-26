@@ -1,11 +1,13 @@
 package br.edu.acad.ifma.notification.usecase;
 
+import br.edu.acad.ifma.notification.adapter.messaging.SendNotificationFailedEvent;
 import br.edu.acad.ifma.notification.domain.FcmToken;
 import br.edu.acad.ifma.notification.domain.NotificationBody;
 import br.edu.acad.ifma.notification.domain.NotificationStatus;
 import br.edu.acad.ifma.notification.domain.NotificationTitle;
 import br.edu.acad.ifma.notification.domain.PushNotification;
 import br.edu.acad.ifma.notification.domain.PushSendingException;
+import br.edu.acad.ifma.notification.port.NotificationEventPublisherPort;
 import br.edu.acad.ifma.notification.port.NotificationRepositoryPort;
 import br.edu.acad.ifma.notification.port.PushSenderPort;
 import java.time.Instant;
@@ -22,13 +24,22 @@ public class SendPushNotificationUseCase {
 
     private final NotificationRepositoryPort repository;
     private final PushSenderPort pushSender;
+    private final NotificationEventPublisherPort eventPublisher;
 
-    public SendPushNotificationUseCase(NotificationRepositoryPort repository, PushSenderPort pushSender) {
+    public SendPushNotificationUseCase(
+            NotificationRepositoryPort repository,
+            PushSenderPort pushSender,
+            NotificationEventPublisherPort eventPublisher) {
         this.repository = repository;
         this.pushSender = pushSender;
+        this.eventPublisher = eventPublisher;
     }
 
     public PushNotification execute(SendPushNotificationCommand command) {
+        return execute(command, 1);
+    }
+
+    public PushNotification execute(SendPushNotificationCommand command, int attemptNumber) {
         FcmToken token = new FcmToken(command.recipientToken());
         NotificationTitle title = new NotificationTitle(command.title());
         NotificationBody body = new NotificationBody(command.body());
@@ -52,7 +63,16 @@ public class SendPushNotificationUseCase {
             log.info("Notification {} sent with FCM id {}", saved.getId(), messageId);
         } catch (PushSendingException e) {
             saved.markFailed(e.getMessage());
-            log.error("Notification {} failed: {}", saved.getId(), e.getMessage());
+            log.error("Notification {} failed on attempt {}: {}", saved.getId(), attemptNumber, e.getMessage());
+            eventPublisher.publishSendNotificationFailed(new SendNotificationFailedEvent(
+                    saved.getId(),
+                    command.recipientToken(),
+                    command.title(),
+                    command.body(),
+                    command.data(),
+                    e.getMessage(),
+                    attemptNumber
+            ));
         }
 
         return repository.save(saved);

@@ -5,6 +5,7 @@ import br.edu.acad.ifma.device.domain.DeviceStatus;
 import br.edu.acad.ifma.device.domain.DeviceType;
 import br.edu.acad.ifma.device.domain.DuplicateDeviceTokenException;
 import br.edu.acad.ifma.device.domain.FcmToken;
+import br.edu.acad.ifma.device.port.DeviceEventPublisherPort;
 import br.edu.acad.ifma.device.port.DeviceRepositoryPort;
 import java.time.Instant;
 import org.springframework.stereotype.Service;
@@ -15,9 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class RegisterDeviceUseCase {
 
     private final DeviceRepositoryPort deviceRepository;
+    private final DeviceEventPublisherPort eventPublisher;
 
-    public RegisterDeviceUseCase(DeviceRepositoryPort deviceRepository) {
+    public RegisterDeviceUseCase(DeviceRepositoryPort deviceRepository, DeviceEventPublisherPort eventPublisher) {
         this.deviceRepository = deviceRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     public Device execute(RegisterDeviceCommand command) {
@@ -32,7 +35,9 @@ public class RegisterDeviceUseCase {
             .withStatus(DeviceStatus.ACTIVE)
             .withRegisteredAt(Instant.now())
             .build();
-        return deviceRepository.save(device);
+        Device saved = deviceRepository.save(device);
+        eventPublisher.publishDeviceRegistered(saved);
+        return saved;
     }
 
     private DeviceType parseType(String platform) {
