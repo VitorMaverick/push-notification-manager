@@ -1,6 +1,23 @@
 version: '3.9'
 
 services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   device-db:
     image: postgres:16-alpine
     container_name: device-db
@@ -43,12 +60,20 @@ services:
     ports:
       - '8081:8081'
     environment:
-      DEVICE_DB_URL: jdbc:postgresql://device-db:5432/device_db
-      DEVICE_DB_USER: device
-      DEVICE_DB_PASS: device
+      DB_HOST: device-db
+      DB_PORT: 5432
+      DB_NAME: device_db
+      DB_USER: device
+      DB_PASS: device
       JWT_BASE64_SECRET: ${JWT_BASE64_SECRET}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASS:-guest}
     depends_on:
       device-db:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
 
   notification-service:
@@ -64,12 +89,19 @@ services:
       NOTIFICATION_DB_PASS: notification
       JWT_BASE64_SECRET: ${JWT_BASE64_SECRET}
       FIREBASE_SERVICE_ACCOUNT_KEY: /secrets/firebase-service-account.json
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASS:-guest}
     volumes:
       - ${FIREBASE_KEY_PATH:-./secrets/firebase-service-account.json}:/secrets/firebase-service-account.json:ro
     depends_on:
       notification-db:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
+  rabbitmq-data:
   device-db-data:
   notification-db-data:
