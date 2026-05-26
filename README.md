@@ -210,13 +210,31 @@ All should return `{"status":"UP"}` (200).
 
 **Service map:**
 
-| Service              | URL                                           | Purpose                              |
-| -------------------- | --------------------------------------------- | ------------------------------------ |
-| Monolith UI          | `http://localhost:8080`                       | React frontend + Spring Boot gateway |
-| Swagger UI           | `http://localhost:8080/swagger-ui/index.html` | API documentation                    |
-| device-service       | `http://localhost:8081`                       | Registers FCM device tokens          |
-| notification-service | `http://localhost:8082`                       | Sends push notifications via FCM     |
-| RabbitMQ management  | `http://localhost:15672` (guest/guest)        | Message broker UI                    |
+```
+┌──────────────────────┬──────────────────────────────────────┬─────────┐
+│       Serviço        │                 URL                  │ Status  │
+├──────────────────────┼──────────────────────────────────────┼─────────┤
+│ Monolith (UI)        │ http://localhost:8080                │ UP      │
+├──────────────────────┼──────────────────────────────────────┼─────────┤
+│ device-service       │ http://localhost:8081                │ UP      │
+├──────────────────────┼──────────────────────────────────────┼─────────┤
+│ notification-service │ http://localhost:8082                │ UP      │
+├──────────────────────┼──────────────────────────────────────┼─────────┤
+│ RabbitMQ UI          │ http://localhost:15672 (guest/guest) │ UP      │
+├──────────────────────┼──────────────────────────────────────┼─────────┤
+│ device-db            │ :5434                                │ healthy │
+├──────────────────────┼──────────────────────────────────────┼─────────┤
+│ notification-db      │ :5433                                │ healthy │
+└──────────────────────┴──────────────────────────────────────┴─────────┘
+```
+
+| Service                               | Purpose                              |
+| ------------------------------------- | ------------------------------------ |
+| Monolith UI                           | React frontend + Spring Boot gateway |
+| Swagger UI (`/swagger-ui/index.html`) | API documentation                    |
+| device-service                        | Registers FCM device tokens          |
+| notification-service                  | Sends push notifications via FCM     |
+| RabbitMQ management                   | Message broker UI                    |
 
 ---
 
