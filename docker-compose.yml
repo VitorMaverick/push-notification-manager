@@ -1,0 +1,75 @@
+version: '3.9'
+
+services:
+  device-db:
+    image: postgres:16-alpine
+    container_name: device-db
+    environment:
+      POSTGRES_DB: device_db
+      POSTGRES_USER: device
+      POSTGRES_PASSWORD: device
+    ports:
+      - '5432:5432'
+    volumes:
+      - device-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U device -d device_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  notification-db:
+    image: postgres:16-alpine
+    container_name: notification-db
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: notification
+      POSTGRES_PASSWORD: notification
+    ports:
+      - '5433:5432'
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U notification -d notification_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  device-service:
+    build:
+      context: ./services/device-service
+      dockerfile: Dockerfile
+    container_name: device-service
+    ports:
+      - '8081:8081'
+    environment:
+      DEVICE_DB_URL: jdbc:postgresql://device-db:5432/device_db
+      DEVICE_DB_USER: device
+      DEVICE_DB_PASS: device
+      JWT_BASE64_SECRET: ${JWT_BASE64_SECRET}
+    depends_on:
+      device-db:
+        condition: service_healthy
+
+  notification-service:
+    build:
+      context: ./services/notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - '8082:8082'
+    environment:
+      NOTIFICATION_DB_URL: jdbc:postgresql://notification-db:5432/notification_db
+      NOTIFICATION_DB_USER: notification
+      NOTIFICATION_DB_PASS: notification
+      JWT_BASE64_SECRET: ${JWT_BASE64_SECRET}
+      FIREBASE_SERVICE_ACCOUNT_KEY: /secrets/firebase-service-account.json
+    volumes:
+      - ${FIREBASE_KEY_PATH:-./secrets/firebase-service-account.json}:/secrets/firebase-service-account.json:ro
+    depends_on:
+      notification-db:
+        condition: service_healthy
+
+volumes:
+  device-db-data:
+  notification-db-data:
