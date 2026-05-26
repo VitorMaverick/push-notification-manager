@@ -113,22 +113,189 @@ The system is built on **Hexagonal Architecture (Ports and Adapters)**, isolatin
 
 ## Running locally
 
-**Prerequisites:** Java 21, Node.js 18+, Docker
+The project runs in two modes: **monolith only** (quick start) or **full microservices stack** (all services). For testing the complete push notification lifecycle, use the full stack.
+
+### Prerequisites
+
+| Tool                    | Version    | Notes                                                                                    |
+| ----------------------- | ---------- | ---------------------------------------------------------------------------------------- |
+| Java                    | 21         | Use [SDKMAN](https://sdkman.io/): `sdk use java 21.0.2-open` — a `.sdkmanrc` is provided |
+| Node.js                 | 18+ LTS    | Required for the React frontend                                                          |
+| Docker + Docker Compose | any recent | Runs RabbitMQ, PostgreSQL databases, and microservices                                   |
+
+A `.sdkmanrc` file at the project root pins Java 21 automatically if you use SDKMAN.
+
+---
+
+### Option 1 — Monolith only (quickest)
 
 ```bash
-# Start dependencies (PostgreSQL)
+# 1. Start the monolith PostgreSQL
 docker compose -f src/main/docker/postgresql.yml up -d
 
-# Run backend
-./mvnw spring-boot:run
-
-# Run frontend (separate terminal)
-npm install
-npm start
+# 2. Start the application (builds frontend + backend)
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
 ```
 
-App available at `http://localhost:8080`
-Swagger UI at `http://localhost:8080/swagger-ui/index.html`
+App: `http://localhost:8080`
+
+> If the frontend shows "An error has occurred", the webpack cache may be stale.
+> Fix: `rm -rf target/webpack/ && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev`
+
+---
+
+### Option 2 — Full microservices stack (recommended for notification testing)
+
+This runs the monolith (gateway + UI), device-service, notification-service, RabbitMQ, and both PostgreSQL databases.
+
+#### Step 1 — Configure environment variables
+
+Create a `.env` file at the project root (already provided in the repo):
+
+```env
+JWT_BASE64_SECRET=<base64-encoded-512-bit-secret>   # must match monolith jhipster config
+FIREBASE_KEY_PATH=./secrets/firebase-service-account.json
+RABBITMQ_USER=guest
+RABBITMQ_PASS=guest
+```
+
+Place the Firebase service account JSON at `secrets/firebase-service-account.json`.
+
+#### Step 2 — Start infrastructure + microservices (Docker)
+
+```bash
+# Start RabbitMQ, device-db, notification-db, device-service, notification-service
+docker compose up -d
+
+# Verify all containers are healthy
+docker compose ps
+```
+
+Expected output:
+
+| Container              | Port                         | Status  |
+| ---------------------- | ---------------------------- | ------- |
+| `rabbitmq`             | 5672 / 15672 (management UI) | healthy |
+| `device-db`            | 5434                         | healthy |
+| `notification-db`      | 5433                         | healthy |
+| `device-service`       | 8081                         | running |
+| `notification-service` | 8082                         | running |
+
+#### Step 3 — Start the monolith PostgreSQL
+
+```bash
+docker compose -f src/main/docker/postgresql.yml up -d
+```
+
+#### Step 4 — Start the monolith
+
+```bash
+# Skip npm rebuild if assets are already built (faster restart)
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev -Dskip.npm=true -Denforcer.skip=true
+
+# Or full build (first run / after frontend changes):
+./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```
+
+#### Step 5 — Verify everything is up
+
+```bash
+curl http://localhost:8080/management/health   # monolith
+curl http://localhost:8081/actuator/health     # device-service
+curl http://localhost:8082/actuator/health     # notification-service
+curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/firebase-messaging-sw.js  # must return 200
+```
+
+All should return `{"status":"UP"}` (200).
+
+**Service map:**
+
+| Service              | URL                                           | Purpose                              |
+| -------------------- | --------------------------------------------- | ------------------------------------ |
+| Monolith UI          | `http://localhost:8080`                       | React frontend + Spring Boot gateway |
+| Swagger UI           | `http://localhost:8080/swagger-ui/index.html` | API documentation                    |
+| device-service       | `http://localhost:8081`                       | Registers FCM device tokens          |
+| notification-service | `http://localhost:8082`                       | Sends push notifications via FCM     |
+| RabbitMQ management  | `http://localhost:15672` (guest/guest)        | Message broker UI                    |
+
+---
+
+### Testing the push notification lifecycle in the browser
+
+The complete lifecycle is: **browser requests permission → FCM token registered → notification sent → Service Worker delivers it → ACK sent back**.
+
+#### Step 1 — Open the app and sign in
+
+1. Open `http://localhost:8080` in a browser that supports Web Push (Chrome, Edge, Firefox)
+2. Sign in with admin credentials (default JHipster: `admin` / `admin`)
+
+#### Step 2 — Grant notification permission
+
+1. Navigate to the **Notifications** or **Device** section in the UI
+2. Click **"Obtain FCM Token From Browser"**
+3. The browser will prompt: **"Allow notifications?"** — click **Allow**
+4. The app registers your FCM token with `device-service` (`POST /api/devices`)
+
+> **Troubleshooting:** If you see `ServiceWorker script evaluation failed`, check that:
+>
+> - `http://localhost:8080/firebase-messaging-sw.js` returns HTTP 200
+> - The `Content-Security-Policy` header includes `https://www.gstatic.com` in `script-src`
+
+#### Step 3 — Send a test notification
+
+1. Navigate to **Send Notification** in the UI
+2. Fill in **Title** and **Body**
+3. Select the device you just registered
+4. Click **Send**
+5. The monolith publishes a message to RabbitMQ → `notification-service` consumes it → sends to FCM
+
+Expected result: a native browser notification appears in the corner of your screen.
+
+#### Step 4 — Observe the full event flow via RabbitMQ
+
+Open `http://localhost:15672` (guest/guest) and check:
+
+- **Exchanges:** `device.exchange` (topic) and `notification.retry.exchange` (direct)
+- **Queues:** `device.registered.queue`, `notification.retry.queue`, `notification.dead.letter.queue`
+- **Message rates:** watch the publish/deliver graph while sending notifications
+
+#### Step 5 — Verify notification status history
+
+```bash
+# List notifications (replace <token> with a valid JWT from the login response)
+curl -H "Authorization: Bearer <token>" http://localhost:8082/api/notifications
+```
+
+Status transitions: `PENDING → SENT → DELIVERED` (after Service Worker ACK) or `FAILED` (if FCM rejects).
+
+#### Step 6 — Test the retry flow (optional)
+
+To trigger the retry/DLQ path, send a notification with an invalid FCM token:
+
+```bash
+curl -X POST http://localhost:8081/api/devices \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"fcmToken":"invalid-token-for-retry-test","platform":"WEB","userId":"test"}'
+```
+
+After ~15 seconds the message moves from `notification.retry.queue` to `notification.dead.letter.queue`. Monitor in the RabbitMQ UI.
+
+---
+
+### Stopping all services
+
+```bash
+# Stop microservices + infrastructure
+docker compose down
+
+# Stop monolith PostgreSQL
+docker compose -f src/main/docker/postgresql.yml down
+
+# Stop monolith (if running in foreground: Ctrl+C)
+# If running in background:
+pkill -f "spring-boot:run"
+```
 
 ---
 
