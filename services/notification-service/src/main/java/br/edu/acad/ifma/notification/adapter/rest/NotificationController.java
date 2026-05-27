@@ -65,7 +65,7 @@ public class NotificationController {
 
     @PostMapping("/ack")
     public NotificationResponse acknowledge(@Valid @RequestBody FcmAckRequest request) {
-        PushNotification updated = markDeliveredUseCase.execute(request.fcmMessageId());
+        PushNotification updated = markDeliveredUseCase.execute(request.notificationId());
         return NotificationResponse.from(updated);
     }
 }

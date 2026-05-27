@@ -20,9 +20,9 @@ public class MarkNotificationDeliveredUseCase {
         this.repository = repository;
     }
 
-    public PushNotification execute(String fcmMessageId) {
-        PushNotification notification = repository.findByFcmMessageId(fcmMessageId)
-                .orElseThrow(() -> new EntityNotFoundException("Notification not found for FCM id: " + fcmMessageId));
+    public PushNotification execute(Long notificationId) {
+        PushNotification notification = repository.findById(notificationId)
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found: " + notificationId));
 
         notification.markDelivered();
         PushNotification updated = repository.save(notification);
