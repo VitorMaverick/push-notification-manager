@@ -91,7 +91,7 @@ export function onFcmMessage(listener: (payload: any) => void) {
         const messageId = (payload && (payload.messageId || (payload as any).data?.messageId)) || null;
         const ack = { notificationId, messageId, token: payload?.from || null, receivedAt: new Date().toISOString() };
         console.error(ack);
-        fetch('/api/v1/notifications/internal/fcm/ack', {
+        fetch('/api/v1/notifications/ack', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(ack),
