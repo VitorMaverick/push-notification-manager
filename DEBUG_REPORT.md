@@ -1,82 +1,46 @@
 # Relatório de Depuração Automatizada
 
 **Projeto:** push-notification-manager
-**Branch:** fix/debug-errors
+**Branch:** feature/hexagonal-dedup-notification-controller
 **Data:** 2026-05-26
-**Ciclos executados:** 7
+**Ciclos executados:** 1
 **Resultado:** SUCESSO
 
 ## Sumário Executivo
 
-Todos os três serviços (device-service, notification-service e gateway JHipster) compilam sem erros, os 75 testes do monolito passam, e todos os containers Docker estão saudáveis. Foram corrigidos 7 problemas críticos que impediam a execução do ambiente completo, incluindo ausência de schema de banco de dados, conflito de porta, configurações de teste inconsistentes e configuração de segurança incorreta.
+Todos os três módulos (monolith, device-service e notification-service) compilam sem erros e passam na suite de testes completa (71 testes no monolith; BUILD SUCCESS nos dois microserviços). A refatoração recente — remoção do `NotificationController`, adição do `NotificationProxyController`, e movimentação de `SendNotificationFailedEvent` do adapter para o domínio no notification-service — está estruturalmente correta e sem regressões. O runtime Docker não pôde ser verificado por restrição de permissão no ambiente de execução, mas o monolith responde em `:8080`.
 
 ## Log de Correções
 
-### Ciclo 1 — Compilação e testes (estáticos)
+Nenhuma correção foi necessária. O codebase estava corretamente refatorado:
 
-- **Problema:** Ausência de `src/test/resources/application.yml` no device-service — qualquer teste de integração futuro falharia ao tentar resolver `${jhipster.security.authentication.jwt.base64-secret}`
-- **Correção:** Criado `/services/device-service/src/test/resources/application.yml` com H2 in-memory, Flyway desabilitado, JWT secret de teste e RabbitMQ configurado
-- **Resultado:** resolvido
-
-### Ciclo 2 — Test resources de notification-service
-
-- **Problema:** O `application.yml` de teste referenciava `classpath:firebase-service-account-test.json` mas o arquivo não existia; RabbitMQ não estava configurado para testes
-- **Correção:** Criado `firebase-service-account-test.json` com chave RSA PKCS#8 válida; adicionado `spring.rabbitmq.listener.simple.auto-startup: false` ao yml de teste; adicionado `spring.flyway.enabled: false`
-- **Resultado:** resolvido
-
-### Ciclo 3 — Conflito de porta (monolith vs device-service)
-
-- **Problema:** `application-dev.yml` do monolith usava porta 8081, igual ao device-service
-- **Correção:** Alterada porta do monolith de 8081 para 8080 em `src/main/resources/config/application-dev.yml`; atualizada referência de base-url do JHipster mail
-- **Resultado:** resolvido
-
-### Ciclo 4 — Schema de banco de dados inexistente
-
-- **Problema:** Ambos os serviços usavam `ddl-auto: validate` mas os bancos PostgreSQL estavam vazios — erro `Schema-validation: missing table [device]` e `missing table [push_notification]`
-- **Correção:** Adicionado Flyway (flyway-core + flyway-database-postgresql) ao pom.xml de ambos os serviços; criadas migrações `V1__create_device_table.sql` e `V1__create_push_notification_table.sql`; configurado `spring.flyway.enabled: true` nos application.yml de produção e `false` nos de teste
-- **Resultado:** resolvido
-
-### Ciclo 5 — Conflito de porta no docker-compose (device-db)
-
-- **Problema:** `device-db` mapeava host port 5432, mas o PostgreSQL do monolith JHipster já ocupava essa porta
-- **Correção:** Alterado mapeamento de porta do device-db de `5432:5432` para `5434:5432` no `docker-compose.yml`
-- **Resultado:** resolvido
-
-### Ciclo 6 — Firebase service account key inválida / caminho errado
-
-- **Problema 1:** Chave RSA no JSON era fake (formato PKCS#1 inválido) — erro `Invalid PKCS#8 data`
-- **Problema 2:** Variável `FIREBASE_SERVICE_ACCOUNT_KEY: /secrets/firebase-service-account.json` era interpretada como `ServletContextResource` em vez de `FileSystemResource`
-- **Correção:** Gerada chave RSA 2048-bit PKCS#8 real com `openssl genpkey + pkcs8`; prefixo `file:` adicionado ao valor da variável no docker-compose; criado `secrets/firebase-service-account.json` e `.env` com JWT_BASE64_SECRET e FIREBASE_KEY_PATH
-- **Resultado:** resolvido
-
-### Ciclo 7 — SecurityConfiguration do device-service bloqueava /actuator/health
-
-- **Problema:** `SecurityConfiguration` do device-service permitia `/management/health/**` mas o actuator estava em `/actuator/health` — retornava HTTP 401
-- **Correção:** Regras alteradas de `/management/health/**` para `/actuator/health`, `/actuator/health/**`, `/actuator/info`
-- **Resultado:** resolvido
+- `NotificationProxyController.java` existe em `adapters/api/rest/` e compila sem erros.
+- `SendNotificationFailedEvent.java` está no pacote `notification.domain` (correto — camada de domínio), não mais no adapter.
+- Todos os arquivos que referenciam `SendNotificationFailedEvent` usam o import correto do pacote `domain`: `SendPushNotificationUseCase`, `NotificationEventPublisherPort`, `RabbitNotificationEventPublisher`, `NotificationRetryConsumer`.
+- Não existe `NotificationControllerTest.java` residual no monolith (foi removido junto com o controller original).
+- Apenas `services/*/target/` não-rastreados no git status — correto.
 
 ## Estado Final dos Serviços
 
-| Serviço               | Compilação | Testes | Docker | Health |
-| --------------------- | ---------- | ------ | ------ | ------ |
-| device-service        | ✅         | ✅     | ✅     | ✅     |
-| notification-service  | ✅         | ✅     | ✅     | ✅     |
-| gateway (JHipster)    | ✅         | ✅     | N/A    | ✅     |
-| rabbitmq              | N/A        | N/A    | ✅     | ✅     |
-| postgres-device       | N/A        | N/A    | ✅     | ✅     |
-| postgres-notification | N/A        | N/A    | ✅     | ✅     |
+| Serviço              | Compilação | Testes           | Runtime (Docker)            | Smoke Test  |
+| -------------------- | ---------- | ---------------- | --------------------------- | ----------- |
+| device-service       | ✅         | ✅ BUILD SUCCESS | ❓ docker compose bloqueado | ❓          |
+| notification-service | ✅         | ✅ BUILD SUCCESS | ❓ docker compose bloqueado | ❓          |
+| monolith (gateway)   | ✅         | ✅ 71/71 passed  | ✅ :8080 respondendo        | ✅ HTTP 200 |
+
+**Nota:** device-service e notification-service não possuem classes de teste Java ainda (surefire relata `No sources to compile` para test — BUILD SUCCESS). Isso é esperado neste estágio da refatoração.
 
 ## Erros Residuais
 
-- **Chave Firebase é fictícia:** A `private_key` nos arquivos `secrets/firebase-service-account.json` e `firebase-service-account-test.json` é uma chave RSA gerada localmente. O `FirebaseApp` inicializa com sucesso (validação de formato), mas qualquer chamada real ao FCM falhará com erro de autenticação do Google. Necessário substituir com credenciais reais de um projeto Firebase.
-- **Microservices sem no-healthcheck Docker:** Os containers `device-service` e `notification-service` no `docker-compose.yml` não têm `healthcheck` configurado. Isso não impede o funcionamento mas não permite que outros serviços dependam deles via `condition: service_healthy`.
-- **Flyway e H2 incompatíveis:** A SQL de migração usa `BIGSERIAL` (sintaxe PostgreSQL). Se alguém tentar rodar testes de integração com Spring Boot full-context, precisará de um script de migração H2 separado ou usar `spring.flyway.locations` diferente em teste.
-- **device-service test directory vazio:** `src/test/java/br/edu/acad/ifma/device/` existe mas não tem nenhuma classe de teste. Os recursos de teste foram criados preventivamente.
+Nenhum erro de compilação ou falha de teste. Questões em aberto:
 
-## Recomendações para Intervenção Humana
+1. **Docker não verificado:** O comando `docker compose` foi bloqueado por restrição de permissão do ambiente de execução. O estado dos containers (RabbitMQ, device-db, notification-db, device-service, notification-service) deve ser confirmado manualmente.
+2. **Microservices sem testes unitários:** `device-service` e `notification-service` não possuem nenhuma classe de teste. Não é um erro de compilação, mas é uma lacuna de cobertura significativa.
+3. **`@MockBean` deprecado:** `DeviceControllerTest.java` do monolith usa `@MockBean` (deprecated no Spring Boot 3.4+). Funciona mas gera warnings em tempo de compilação.
 
-1. **Substituir chave Firebase:** Obter um `firebase-service-account.json` real de um projeto Firebase (Console Firebase → Configurações do Projeto → Contas de Serviço) e colocar em `secrets/firebase-service-account.json`. O arquivo `.env` aponta para esse caminho.
-2. **Não commitar `.env` e `secrets/`:** Adicionar ao `.gitignore` — contêm o JWT secret e a chave Firebase (mesmo que fictícia por enquanto).
-3. **Adicionar healthcheck Docker aos microservices:** Configurar `healthcheck` nos serviços `device-service` e `notification-service` no `docker-compose.yml` usando o endpoint `/actuator/health`.
-4. **Escrever testes de integração:** O device-service não tem nenhuma classe de teste. A estrutura e recursos estão prontos.
-5. **Porta local do device-service:** Ao rodar localmente (sem Docker), a configuração `${DB_HOST:localhost}:${DB_PORT:5432}` do device-service aponta para 5432, mas o PostgreSQL do monolith ocupa essa porta. Usar a variável de ambiente `DB_PORT=5434` ou um profile separado.
+## Recomendações
+
+1. **Verificar Docker manualmente:** Executar `docker compose up -d && docker compose ps` para confirmar que todos os containers sobem corretamente após a refatoração.
+2. **Escrever testes para os microserviços:** Criar testes unitários para os use cases de `device-service` e `notification-service`, especialmente `SendPushNotificationUseCase` (lógica de deduplicação).
+3. **Migrar `@MockBean` para `@MockitoBean`:** Em `DeviceControllerTest.java`, substituir `@MockBean` por `@MockitoBean` (Spring Boot 3.4+) para eliminar os warnings de deprecação.
+4. **Smoke test de integração pós-Docker:** Validar o fluxo completo: POST `/api/devices` no device-service → POST `/api/notifications` no notification-service → verificar evento no RabbitMQ.
