@@ -233,4 +233,6 @@ firebase:
   tracing:
     enabled: false
 
-# application:
+# URL of the standalone notification-service; override per environment as needed.
+notification-service:
+  base-url: http://localhost:8082

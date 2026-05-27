@@ -1,9 +1,14 @@
-package br.edu.acad.ifma.notification.adapter.messaging;
+package br.edu.acad.ifma.notification.domain;
 
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Map;
 
+/**
+ * Domain event emitted when a push notification attempt fails.
+ * Lives in the domain package so that port and usecase layers can depend on it
+ * without crossing into adapter territory.
+ */
 public class SendNotificationFailedEvent implements Serializable {
 
     private Long notificationId;

@@ -1,6 +1,7 @@
 package br.edu.acad.ifma.notification.adapter.messaging;
 
 import br.edu.acad.ifma.notification.config.RabbitMQConfig;
+import br.edu.acad.ifma.notification.domain.SendNotificationFailedEvent;
 import br.edu.acad.ifma.notification.port.NotificationEventPublisherPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

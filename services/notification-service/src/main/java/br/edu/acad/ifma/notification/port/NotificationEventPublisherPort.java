@@ -1,6 +1,6 @@
 package br.edu.acad.ifma.notification.port;
 
-import br.edu.acad.ifma.notification.adapter.messaging.SendNotificationFailedEvent;
+import br.edu.acad.ifma.notification.domain.SendNotificationFailedEvent;
 
 public interface NotificationEventPublisherPort {
     void publishSendNotificationFailed(SendNotificationFailedEvent event);

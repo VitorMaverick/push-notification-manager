@@ -1,6 +1,6 @@
 package br.edu.acad.ifma.notification.usecase;
 
-import br.edu.acad.ifma.notification.adapter.messaging.SendNotificationFailedEvent;
+import br.edu.acad.ifma.notification.domain.SendNotificationFailedEvent;
 import br.edu.acad.ifma.notification.domain.FcmToken;
 import br.edu.acad.ifma.notification.domain.NotificationBody;
 import br.edu.acad.ifma.notification.domain.NotificationStatus;
