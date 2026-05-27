@@ -95,6 +95,8 @@ module.exports = async options => {
           DEVELOPMENT: JSON.stringify(development),
           VERSION: JSON.stringify(environment.VERSION),
           SERVER_API_URL: JSON.stringify(environment.SERVER_API_URL),
+          DEVICE_SERVICE_URL: JSON.stringify(environment.DEVICE_SERVICE_URL),
+          NOTIFICATION_SERVICE_URL: JSON.stringify(environment.NOTIFICATION_SERVICE_URL),
         }),
         new ESLintPlugin({
           configType: 'flat',

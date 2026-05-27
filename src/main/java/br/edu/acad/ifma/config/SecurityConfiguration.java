@@ -67,11 +67,6 @@ public class SecurityConfiguration {
                     .requestMatchers("/api/activate").permitAll()
                     .requestMatchers("/api/account/reset-password/init").permitAll()
                     .requestMatchers("/api/account/reset-password/finish").permitAll()
-                    .requestMatchers("/api/internal/firebase/health").permitAll()
-                    // Legacy ACK path (monolith era) kept for backward compatibility during transition.
-                    .requestMatchers(HttpMethod.POST, "/api/v1/notifications/internal/fcm/ack").permitAll()
-                    // Microservice ACK path forwarded to notification-service.
-                    .requestMatchers(HttpMethod.POST, "/api/v1/notifications/ack").permitAll()
                     .requestMatchers("/api/admin/**").hasAuthority(AuthoritiesConstants.ADMIN)
                     .requestMatchers("/api/**").authenticated()
                     .requestMatchers("/v3/api-docs/**").hasAuthority(AuthoritiesConstants.ADMIN)

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const V1_BASE = '/api/v1/notifications';
+const V1_BASE = `${NOTIFICATION_SERVICE_URL}/api/v1/notifications`;
 
 const sendFcm = async (payload: any) => {
   try {
