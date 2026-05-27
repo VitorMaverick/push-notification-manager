@@ -69,12 +69,12 @@ const FcmSend = () => {
         }
       }
 
-      // Backend expects deviceToken/title/body field names
+      // notification-service expects recipientToken/title/body/data
       const payload = {
-        deviceToken: data.token,
+        recipientToken: data.token,
         title: data.title,
         body: data.body,
-        dados: parsedDados,
+        data: parsedDados,
       };
       console.error('📤 Payload being sent:', payload);
       addLog('Sending payload ' + JSON.stringify(payload));
