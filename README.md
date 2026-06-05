@@ -6,6 +6,136 @@ The project serves as a practical case study on applying **Hexagonal Architectur
 
 ---
 
+## Entendendo a Arquitetura do Ecossistema
+
+Este não é um projeto monolítico tradicional. Ao longo do desenvolvimento, o sistema evoluiu de um monolito JHipster para uma **arquitetura de microserviços orientada a eventos**. Para entender o porquê e o como, vamos começar pelos conceitos fundamentais.
+
+### Por que microserviços?
+
+Imagine que você tem uma loja física onde o caixa, o estoque e o atendimento ao cliente são feitos por uma única pessoa. Enquanto a loja é pequena, funciona. Mas quando cresce, essa pessoa vira gargalo: se o estoque trava, o caixa para; se o atendimento demora, tudo atrasa.
+
+No software, isso é um **monolito** — todo o código vive em um único processo. O PushNotificationManager nasceu assim: autenticação, registro de dispositivos, envio de notificações e frontend, tudo no mesmo JAR. Funcionava, mas tinha três dores:
+
+1. **Acoplamento de implantação** — qualquer mudança (mesmo no envio de push) exigia reimplantar a aplicação inteira
+2. **Acoplamento de escala** — se o Firebase ficasse lento, não era possível escalar apenas o componente de envio
+3. **Fragilidade** — uma falha no Firebase significava notificação perdida para sempre, sem retry
+
+A solução foi **extrair responsabilidades em serviços independentes**, cada um com seu banco de dados, sua lógica e seu ciclo de deploy.
+
+### A decomposição em 3 serviços
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                         BROWSER                                   │
+│            React SPA + Service Worker (FCM)                       │
+└──────┬────────────────────┬────────────────────┬─────────────────┘
+       │ :8080              │ :8081              │ :8082
+       │                    │                    │
+┌──────▼──────────┐  ┌─────▼──────────┐  ┌─────▼──────────────────┐
+│   MONOLITO      │  │ DEVICE-SERVICE │  │ NOTIFICATION-SERVICE    │
+│   (Gateway)     │  │                │  │                         │
+│                 │  │ • Registro de  │  │ • Envio push via FCM    │
+│ • Login JWT     │  │   tokens FCM   │  │ • Histórico e filtros   │
+│ • Gestão users  │  │ • Ciclo de vida│  │ • ACK de entrega        │
+│ • Frontend React│  │   do device    │  │ • Retry automático      │
+│ • Service Worker│  │ • Publica evento│  │ • Dead Letter Queue     │
+│                 │  │   no RabbitMQ  │  │                         │
+└────────┬────────┘  └───────┬────────┘  └────────┬───────────────┘
+         │                   │ publish             │ consume
+         │           ┌───────▼─────────────────────▼───────┐
+         │           │            RABBITMQ                  │
+         │           │                                      │
+         │           │  • device.registered.queue           │
+         │           │  • notification.retry.queue          │
+         │           │  • notification.dlq                  │
+         └───────────┴──────────────────────────────────────┘
+```
+
+| Serviço | Porta | Responsabilidade | Banco |
+|---------|-------|------------------|-------|
+| **Monolito** (Gateway) | 8080 | Autenticação JWT, gestão de usuários, serve o frontend React | PostgreSQL (:5432) |
+| **device-service** | 8081 | Registro e gestão de tokens FCM dos dispositivos | PostgreSQL (:5434) |
+| **notification-service** | 8082 | Envio de push via Firebase, histórico, retry/DLQ | PostgreSQL (:5433) |
+
+### Arquitetura Hexagonal: o coração dos microserviços
+
+Cada microserviço segue a **Arquitetura Hexagonal** (ou Ports and Adapters), proposta por Alistair Cockburn. A ideia é simples e poderosa: o código de negócio (domínio) fica no centro, completamente isolado do mundo externo. A comunicação acontece por meio de **portas** (interfaces) e **adaptadores** (implementações concretas).
+
+```
+          ┌─────────────────────────┐
+          │      ADAPTADORES        │  ← Mundo externo
+          │  (REST, FCM, JPA, MQ)   │
+          └────────────┬────────────┘
+                       │ implementa
+          ┌────────────▼────────────┐
+          │        PORTAS           │  ← Contratos (interfaces)
+          │  (PushSenderPort,       │
+          │   DeviceRepositoryPort) │
+          └────────────┬────────────┘
+                       │ usa
+          ┌────────────▼────────────┐
+          │       DOMÍNIO           │  ← Regras de negócio puras
+          │  (Use Cases, Entities,  │
+          │   Value Objects)        │
+          └─────────────────────────┘
+```
+
+**Por que isso importa?** Porque amanhã, se o Google descontinuar o Firebase (como já fez com o Google Cloud Messaging), basta criar um novo adaptador — digamos `ApnsSenderAdapter` — que implementa a mesma porta `PushSenderPort`. O domínio não muda. Os testes do domínio continuam passando. Zero impacto nas regras de negócio.
+
+### Comunicação assíncrona: RabbitMQ e eventos
+
+Os microserviços não se chamam diretamente (nada de HTTP síncrono entre eles). Eles se comunicam por **eventos** via RabbitMQ:
+
+1. Quando um dispositivo é registrado, o `device-service` publica um evento `DeviceRegisteredEvent`
+2. O `notification-service` consome esse evento e pode, por exemplo, enviar uma notificação de boas-vindas
+
+Para lidar com falhas no envio (Firebase fora do ar, token expirado etc.), o sistema implementa um **mecanismo de retry com Dead Letter Queue**:
+
+- Notificação falha → vai para `notification.retry.queue` (TTL de 15 segundos)
+- Após o TTL, é reprocessada automaticamente (até 3 tentativas)
+- Falhas permanentes (token inválido) → vão direto para `notification.dlq`
+
+### O monolito: por que ainda existe?
+
+O monolito não desapareceu — ele evoluiu para um **gateway**. Sua função agora é:
+
+- **Servir o frontend React** (Single Page Application)
+- **Autenticar usuários** e emitir tokens JWT
+- **Hospedar o Service Worker** que recebe pushes do Firebase
+
+Ele segue o padrão **MVC convencional** do JHipster (model, repository, service, web), sem a complexidade hexagonal — porque autenticação não precisa de troca de provedor como o push precisa.
+
+### Segurança: JWT compartilhado
+
+Os três serviços compartilham a mesma chave secreta JWT (`JWT_BASE64_SECRET`). O monolito **emite** o token; os microserviços **validam**. Assim, um único login no frontend garante acesso autenticado a todos os serviços.
+
+### Padrões de Projeto aplicados
+
+| Padrão | Onde | Problema resolvido |
+|--------|------|--------------------|
+| **Strategy** | `PushSenderPort` → `FcmService` | Trocar provedor de push sem alterar regras |
+| **Observer** | Service Worker + FCM | Dispositivo reage automaticamente a eventos push |
+| **Builder** | `PushNotification.builder()` | Construção segura de objetos complexos |
+| **Adapter** | `FcmService` wrapping Firebase SDK | Traduz domínio para API externa |
+| **Factory** | `DeviceRepositoryAdapter` | Isola entidades JPA do domínio |
+| **Specification** | Filtros de histórico | Queries dinâmicas sem if-else em cascata |
+
+### Como tudo se conecta na prática
+
+O ciclo completo de uma notificação push:
+
+1. **Usuário abre o app** → frontend (React) pede permissão ao browser
+2. **Service Worker se registra** → obtém token FCM do Firebase
+3. **Frontend envia token** → `POST device-service/api/v1/devices` → persiste no banco
+4. **device-service publica evento** → `DeviceRegisteredEvent` no RabbitMQ
+5. **Admin envia notificação** → `POST notification-service/api/v1/notifications`
+6. **Use case orquestra** → persiste (PENDING), chama `PushSenderPort.send()`, atualiza (SENT)
+7. **Firebase entrega** → Service Worker recebe, exibe notificação nativa
+8. **Service Worker envia ACK** → `POST /api/v1/notifications/ack` → status vira DELIVERED
+9. **Se falhou** → evento de retry → RabbitMQ → reprocessa até 3x → DLQ se permanente
+
+---
+
 ## What it does
 
 - **Device registration** — registers browser FCM tokens with metadata (platform, user-agent, status ACTIVE/INACTIVE)
