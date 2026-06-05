@@ -25,14 +25,9 @@ spring:
     oauth2:
       resourceserver:
         jwt:
+          base64-secret: ${JWT_BASE64_SECRET}
           authority-prefix: ''
           authorities-claim-name: auth
-
-jhipster:
-  security:
-    authentication:
-      jwt:
-        base64-secret: ${JWT_BASE64_SECRET}
 
 server:
   port: ${SERVER_PORT:8081}
