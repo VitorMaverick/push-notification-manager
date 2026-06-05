@@ -156,3 +156,4 @@ coverage/
 # Firebase service account keys
 *-firebase-adminsdk-*.json
 secrets/firebase-service-account.json
+services/*/target/
