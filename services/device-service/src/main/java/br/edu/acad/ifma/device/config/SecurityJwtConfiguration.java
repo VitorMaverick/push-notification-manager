@@ -13,7 +13,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 @Configuration
 public class SecurityJwtConfiguration {
 
-    @Value("${jhipster.security.authentication.jwt.base64-secret}")
+    @Value("${spring.security.oauth2.resourceserver.jwt.base64-secret}")
     private String jwtKey;
 
     @Bean

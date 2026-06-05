@@ -36,6 +36,8 @@ spring:
       resourceserver:
         jwt:
           base64-secret: ${JWT_BASE64_SECRET}
+          authority-prefix: ''
+          authorities-claim-name: auth
 
 firebase:
   service-account-key: ${FIREBASE_SERVICE_ACCOUNT_KEY:classpath:firebase-service-account.json}
