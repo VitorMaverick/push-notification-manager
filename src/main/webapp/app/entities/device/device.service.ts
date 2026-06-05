@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE = '/api/v1/devices';
+const BASE = `${DEVICE_SERVICE_URL}/api/v1/devices`;
 
 export const registerDevice = (data: { fcmToken: string; platform?: string; userAgent?: string }) => axios.post(BASE, data);
 

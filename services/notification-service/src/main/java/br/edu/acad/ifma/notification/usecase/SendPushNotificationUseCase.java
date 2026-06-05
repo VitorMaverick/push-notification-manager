@@ -1,6 +1,6 @@
 package br.edu.acad.ifma.notification.usecase;
 
-import br.edu.acad.ifma.notification.adapter.messaging.SendNotificationFailedEvent;
+import br.edu.acad.ifma.notification.domain.SendNotificationFailedEvent;
 import br.edu.acad.ifma.notification.domain.FcmToken;
 import br.edu.acad.ifma.notification.domain.NotificationBody;
 import br.edu.acad.ifma.notification.domain.NotificationStatus;
@@ -11,6 +11,8 @@ import br.edu.acad.ifma.notification.port.NotificationEventPublisherPort;
 import br.edu.acad.ifma.notification.port.NotificationRepositoryPort;
 import br.edu.acad.ifma.notification.port.PushSenderPort;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -55,9 +57,10 @@ public class SendPushNotificationUseCase {
         PushNotification saved = repository.save(notification);
 
         try {
-            String messageId = command.data() != null && !command.data().isEmpty()
-                    ? pushSender.sendPushNotification(token, title, body, command.data())
-                    : pushSender.sendPushNotification(token, title, body);
+            Map<String, String> fcmData = new HashMap<>();
+            if (command.data() != null) fcmData.putAll(command.data());
+            fcmData.put("notificationId", String.valueOf(saved.getId()));
+            String messageId = pushSender.sendPushNotification(token, title, body, fcmData);
 
             saved.markSent(messageId);
             log.info("Notification {} sent with FCM id {}", saved.getId(), messageId);

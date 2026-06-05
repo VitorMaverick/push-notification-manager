@@ -34,6 +34,15 @@ messaging.onBackgroundMessage(function (payload) {
   // eslint-disable-next-line no-console
   console.log('[firebase-messaging-sw.js] Received background message:', payload);
 
+  const notificationId = payload?.data?.notificationId ? Number(payload.data.notificationId) : null;
+  if (notificationId) {
+    fetch('http://localhost:8082/api/v1/notifications/ack', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notificationId }),
+    }).catch(() => {});
+  }
+
   // If the payload already contains a notification, the browser renders it automatically.
   // We only build a custom notification for data-only messages.
   const notification = payload.notification || payload.data || {};

@@ -2,6 +2,7 @@ package br.edu.acad.ifma.notification.adapter.messaging;
 
 import br.edu.acad.ifma.notification.config.RabbitMQConfig;
 import br.edu.acad.ifma.notification.domain.FcmToken;
+import br.edu.acad.ifma.notification.domain.SendNotificationFailedEvent;
 import br.edu.acad.ifma.notification.domain.NotificationBody;
 import br.edu.acad.ifma.notification.domain.NotificationTitle;
 import br.edu.acad.ifma.notification.domain.PushSendingException;
