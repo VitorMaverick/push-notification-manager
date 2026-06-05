@@ -88,17 +88,13 @@ export function onFcmMessage(listener: (payload: any) => void) {
         // send ack to backend (non-blocking)
         const rawNotificationId = (payload as any)?.data?.notificationId;
         const notificationId = rawNotificationId ? Number(rawNotificationId) : null;
-        const messageId = (payload && (payload.messageId || (payload as any).data?.messageId)) || null;
-        const ack = { notificationId, messageId, token: payload?.from || null, receivedAt: new Date().toISOString() };
-        console.error(ack);
-        fetch('/api/v1/notifications/internal/fcm/ack', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(ack),
-        }).catch(() => {
-          // ignore ACK errors
-          console.error(`error`);
-        });
+        if (notificationId) {
+          fetch(`${NOTIFICATION_SERVICE_URL}/api/v1/notifications/ack`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ notificationId }),
+          }).catch(() => {});
+        }
       }
     } catch (e) {
       // ignore any toast errors

@@ -6,4 +6,6 @@ module.exports = {
   // If you use an API server, in `prod` mode, you will need to enable CORS
   // (see the `jhipster.cors` common JHipster property in the `application-*.yml` configurations)
   SERVER_API_URL: '',
+  DEVICE_SERVICE_URL: process.env.DEVICE_SERVICE_URL || 'http://localhost:8081',
+  NOTIFICATION_SERVICE_URL: process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:8082',
 };
