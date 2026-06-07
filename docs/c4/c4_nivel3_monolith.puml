@@ -1,0 +1,47 @@
+@startuml c4_nivel3_monolith
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Nível 3 - Componentes do Backend API (monolith-ui)
+
+Container_Boundary(backend, "Backend API - monolith-ui (Spring Boot)") {
+    Component(authController, "AuthenticateController", "Spring REST Controller", "Endpoint /api/authenticate. Gera token JWT.")
+    Component(accountResource, "AccountResource", "Spring REST Controller", "Endpoints de registro, ativação e recuperação de conta.")
+    Component(userResource, "UserResource", "Spring REST Controller", "CRUD de usuários (admin).")
+    Component(publicUserResource, "PublicUserResource", "Spring REST Controller", "Consulta pública de usuários.")
+    Component(authorityResource, "AuthorityResource", "Spring REST Controller", "Gerenciamento de roles/authorities.")
+
+    Component(securityConfig, "SecurityConfiguration", "Spring Security Config", "Configura filtros, CORS, CSRF e regras de autorização.")
+    Component(jwtConfig, "SecurityJwtConfiguration", "Spring Security JWT", "Configura decoder/encoder JWT com chave secreta.")
+    Component(domainUserDetails, "DomainUserDetailsService", "Spring UserDetailsService", "Carrega usuário do banco para autenticação.")
+    Component(securityUtils, "SecurityUtils", "Utility Class", "Extrai informações do contexto de segurança.")
+
+    Component(userService, "UserService", "Spring Service", "Lógica de negócio: criação, atualização e remoção de usuários.")
+    Component(mailService, "MailService", "Spring Service", "Envio de e-mails de ativação e recuperação de senha.")
+
+    Component(userMapper, "UserMapper", "MapStruct Mapper", "Converte entre entidade User e DTOs.")
+    Component(adminUserDTO, "AdminUserDTO", "DTO", "Transferência de dados de usuário para a API.")
+
+    Component(userRepo, "UserRepository", "Spring Data JPA", "Acesso a dados da entidade User.")
+    Component(authorityRepo, "AuthorityRepository", "Spring Data JPA", "Acesso a dados de Authority.")
+
+    Component(spaFilter, "SpaWebFilter", "Servlet Filter", "Redireciona rotas SPA para index.html.")
+    Component(exceptionTranslator, "ExceptionTranslator", "ControllerAdvice", "Traduz exceções para respostas HTTP padronizadas.")
+}
+
+ContainerDb(monolithDb, "Monolith DB", "PostgreSQL 16", "Usuários, authorities")
+Container(deviceMs, "Device Service", "Spring Boot", "Porta 8081")
+Container(notificationMs, "Notification Service", "Spring Boot", "Porta 8082")
+
+Rel(authController, domainUserDetails, "Autentica usuário")
+Rel(authController, jwtConfig, "Gera token JWT")
+Rel(accountResource, userService, "Registra/Atualiza conta")
+Rel(userResource, userService, "CRUD de usuários")
+Rel(userService, userRepo, "Persiste usuários")
+Rel(userService, mailService, "Envia e-mail de ativação")
+Rel(userService, userMapper, "Converte DTOs")
+Rel(domainUserDetails, userRepo, "Busca usuário por login")
+Rel(userRepo, monolithDb, "JDBC")
+Rel(authorityRepo, monolithDb, "JDBC")
+
+SHOW_LEGEND()
+@enduml

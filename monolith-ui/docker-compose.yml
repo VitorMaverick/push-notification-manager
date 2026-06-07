@@ -52,7 +52,7 @@ services:
 
   device-service:
     build:
-      context: ./device-ms
+      context: ./services/device-service
       dockerfile: Dockerfile
     container_name: device-service
     ports:
@@ -76,7 +76,7 @@ services:
 
   notification-service:
     build:
-      context: ./notification-ms
+      context: ./services/notification-service
       dockerfile: Dockerfile
     container_name: notification-service
     ports:
@@ -92,7 +92,7 @@ services:
       RABBITMQ_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_PASS: ${RABBITMQ_PASS:-guest}
     volumes:
-      - ${FIREBASE_KEY_PATH:-./monolith-ui/secrets/firebase-service-account.json}:/secrets/firebase-service-account.json:ro
+      - ${FIREBASE_KEY_PATH:-./secrets/firebase-service-account.json}:/secrets/firebase-service-account.json:ro
     depends_on:
       notification-db:
         condition: service_healthy

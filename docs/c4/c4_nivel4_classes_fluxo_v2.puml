@@ -1,0 +1,131 @@
+@startuml c4_nivel4_classes_fluxo_v2
+title Nível 4 – Classes do Fluxo de Notificação (v2 – com melhorias)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+package "config (Infraestrutura Transversal)" {
+    class CorrelationIdFilter <<@Component>> {
+        + {static} CORRELATION_ID_HEADER: String
+        + {static} MDC_KEY: String
+        # doFilterInternal(request, response, chain): void
+    }
+
+    class RestTemplateConfig <<@Configuration>> {
+        + restTemplate(builder: RestTemplateBuilder): RestTemplate
+    }
+
+    class AsyncConfig <<@Configuration\n@EnableAsync>> {
+        + notificationExecutor(): Executor
+    }
+
+    note bottom of RestTemplateConfig
+        Timeouts: connect=3s, read=5s
+        Interceptor: propaga X-Correlation-ID
+    end note
+
+    note bottom of AsyncConfig
+        ThreadPool: core=2, max=5, queue=25
+        Prefix: "notif-async-"
+    end note
+}
+
+package "adapter.web" {
+    class NotificationController <<@RestController>> {
+        - sendUseCase: SendPushNotificationUseCase
+        - asyncService: AsyncNotificationService
+        - ackUseCase: MarkNotificationDeliveredUseCase
+        + sendNotification(dto: SendNotificationRequest): ResponseEntity<202>
+        + acknowledgeNotification(id: UUID, dto: AckRequestDTO): ResponseEntity<200>
+    }
+}
+
+package "usecase" {
+    class SendPushNotificationUseCase <<@Service>> {
+        - repoPort: NotificationRepositoryPort
+        + createPending(request): PushNotification
+    }
+
+    class AsyncNotificationService <<@Service>> {
+        - pushSenderPort: PushSenderPort
+        - repositoryPort: NotificationRepositoryPort
+        + {method} <<@Async>> sendInBackground(notification): void
+    }
+
+    class MarkNotificationDeliveredUseCase <<@Service>> {
+        - repoPort: NotificationRepositoryPort
+        + execute(id: UUID, status, timestamp): void
+    }
+}
+
+package "port" {
+    interface NotificationRepositoryPort <<Port>> {
+        + save(notification): PushNotification
+        + findById(id: UUID): Optional
+        + updateStatus(id, status): void
+    }
+
+    interface PushSenderPort <<Port>> {
+        + send(token, title, body): String
+    }
+}
+
+package "adapter.fcm" {
+    class FcmService <<@Component>> {
+        - firebaseMessaging: FirebaseMessaging
+        + send(token, title, body): String
+    }
+}
+
+package "domain" {
+    class PushNotification <<Entity>> {
+        - id: UUID
+        - title: String
+        - body: String
+        - fcmToken: String
+        - status: NotificationStatus
+        - fcmMessageId: String
+        - ackTimestamp: Instant
+        + markAsSent(messageId): void
+        + markAsFailed(): void
+        + markAsDelivered(timestamp): void
+    }
+
+    enum NotificationStatus {
+        PENDING
+        SENT
+        DELIVERED
+        READ
+        FAILED
+    }
+}
+
+' Relacionamentos do fluxo
+NotificationController --> SendPushNotificationUseCase : "1. createPending()"
+NotificationController --> AsyncNotificationService : "2. sendInBackground() [async]"
+NotificationController --> MarkNotificationDeliveredUseCase : "ACK"
+
+AsyncNotificationService --> PushSenderPort : "send() [thread pool]"
+AsyncNotificationService --> NotificationRepositoryPort : "save(SENT/FAILED)"
+
+SendPushNotificationUseCase --> NotificationRepositoryPort : "save(PENDING)"
+MarkNotificationDeliveredUseCase --> NotificationRepositoryPort : "updateStatus()"
+
+PushSenderPort <|.. FcmService : implements
+PushNotification --> NotificationStatus
+
+note right of NotificationController
+  Fluxo não-bloqueante:
+  1. Cria notificação PENDING
+  2. Dispara envio async
+  3. Retorna 202 Accepted
+  (não espera Firebase)
+end note
+
+note right of AsyncNotificationService
+  Padrões:
+  - @Async (Spring)
+  - Strategy (PushSenderPort)
+  - Fire-and-Forget
+end note
+@enduml

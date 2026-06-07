@@ -1,0 +1,128 @@
+@startuml c4_nivel4_async
+title Nível 4 - Diagrama de Classes: Comunicação Assíncrona (Event-Driven)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+package "device-ms" {
+    package "domain" as deviceDomain {
+        class Device <<@Entity>> {
+            - id: UUID
+            - ownerLogin: String
+            - fcmToken: FcmToken
+            - deviceType: DeviceType
+            - status: DeviceStatus
+        }
+        class FcmToken <<Value Object>> {
+            - value: String
+        }
+        enum DeviceType {
+            ANDROID
+            IOS
+            WEB
+        }
+        enum DeviceStatus {
+            ACTIVE
+            INACTIVE
+        }
+    }
+
+    package "port" as devicePort {
+        interface DeviceEventPublisherPort <<Port>> {
+            + publishDeviceRegistered(device: Device): void
+        }
+        interface DeviceRepositoryPort <<Port>> {
+            + save(device: Device): Device
+            + findByFcmToken(token: FcmToken): Optional<Device>
+            + findAllByOwnerLogin(login: String): List<Device>
+        }
+    }
+
+    package "usecase" as deviceUseCase {
+        class RegisterDeviceUseCase <<@Service>> {
+            - repositoryPort: DeviceRepositoryPort
+            - eventPublisherPort: DeviceEventPublisherPort
+            + execute(command: RegisterDeviceCommand): Device
+        }
+        class RegisterDeviceCommand {
+            - ownerLogin: String
+            - fcmToken: String
+            - deviceType: DeviceType
+        }
+    }
+
+    package "adapter.messaging" as deviceMessaging {
+        class RabbitDeviceEventPublisher <<@Component>> {
+            - rabbitTemplate: RabbitTemplate
+            + publishDeviceRegistered(device: Device): void
+        }
+        class DeviceRegisteredEvent <<Event DTO>> {
+            - deviceId: UUID
+            - ownerLogin: String
+            - fcmToken: String
+            - deviceType: String
+            - registeredAt: Instant
+        }
+    }
+}
+
+package "notification-ms" {
+    package "adapter.messaging" as notifMessaging {
+        class DeviceRegisteredConsumer <<@Component>> {
+            - sendPushUseCase: SendPushNotificationUseCase
+            + onDeviceRegistered(event: DeviceRegisteredEvent): void
+        }
+        class NotifDeviceRegisteredEvent <<Event DTO>> {
+            - deviceId: UUID
+            - ownerLogin: String
+            - fcmToken: String
+            - deviceType: String
+            - registeredAt: Instant
+        }
+        class NotificationRetryConsumer <<@Component>> {
+            - sendPushUseCase: SendPushNotificationUseCase
+            + onRetry(event: SendNotificationFailedEvent): void
+        }
+    }
+
+    package "usecase" as notifUseCase {
+        class SendPushNotificationUseCase <<@Service>> {
+            - repoPort: NotificationRepositoryPort
+            - pushSenderPort: PushSenderPort
+            - eventPublisherPort: NotificationEventPublisherPort
+            + execute(command: SendPushNotificationCommand): PushNotification
+        }
+    }
+}
+
+package "Infrastructure" {
+    class rabbit <<Message Broker>> {
+        Exchange: device.events (topic)
+        Queue: notification.device.registered
+        Routing Key: device.registered
+        DLQ: notification.retry
+    }
+}
+
+' Relationships
+RegisterDeviceUseCase --> DeviceEventPublisherPort : usa
+DeviceEventPublisherPort <|.. RabbitDeviceEventPublisher : implements
+RabbitDeviceEventPublisher --> rabbit : publica DeviceRegisteredEvent
+rabbit --> DeviceRegisteredConsumer : consome DeviceRegisteredEvent
+rabbit --> NotificationRetryConsumer : consome retry events
+DeviceRegisteredConsumer --> SendPushNotificationUseCase : dispara envio
+RegisterDeviceUseCase --> DeviceRepositoryPort : persiste
+
+note bottom of RabbitDeviceEventPublisher
+  Padrões:
+  - Publisher/Subscriber
+  - Event-Driven Architecture
+  - Ports & Adapters (Hexagonal)
+end note
+
+note bottom of DeviceRegisteredConsumer
+  @RabbitListener anotação Spring
+  Desacoplamento total entre
+  producer e consumer
+end note
+@enduml

@@ -1,0 +1,137 @@
+@startuml c4_nivel4_classes_fluxo
+title Nível 4 – Diagrama de Classes do Fluxo de Notificação Push
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+package "adapter.web" {
+    class NotificationController <<@RestController>> {
+        - sendUseCase: SendPushNotificationUseCase
+        - ackUseCase: MarkNotificationDeliveredUseCase
+        + sendNotification(dto: NotificationRequestDTO): ResponseEntity
+        + acknowledgeNotification(id: UUID, dto: AckRequestDTO): ResponseEntity
+    }
+
+    class NotificationRequestDTO <<DTO>> {
+        - title: String
+        - body: String
+        - fcmToken: String
+    }
+
+    class AckRequestDTO <<DTO>> {
+        - status: String
+        - timestamp: Instant
+    }
+}
+
+package "usecase" {
+    class SendPushNotificationUseCase <<@Service>> {
+        - repoPort: NotificationRepositoryPort
+        - pushSenderPort: PushSenderPort
+        + execute(command: SendPushCommand): PushNotification
+    }
+
+    class MarkNotificationDeliveredUseCase <<@Service>> {
+        - repoPort: NotificationRepositoryPort
+        + execute(id: UUID, status: NotificationStatus, timestamp: Instant): void
+    }
+}
+
+package "port" {
+    interface NotificationRepositoryPort <<Port>> {
+        + save(notification: PushNotification): PushNotification
+        + findById(id: UUID): Optional<PushNotification>
+        + updateStatus(id: UUID, status: NotificationStatus): void
+    }
+
+    interface PushSenderPort <<Port>> {
+        + send(token: String, title: String, body: String): String
+    }
+}
+
+package "domain" {
+    class PushNotification <<@Entity>> {
+        - id: UUID
+        - title: String
+        - body: String
+        - fcmToken: String
+        - status: NotificationStatus
+        - fcmMessageId: String
+        - ackTimestamp: Instant
+        - createdAt: Instant
+    }
+
+    enum NotificationStatus {
+        PENDING
+        SENT
+        DELIVERED
+        READ
+        FAILED
+    }
+}
+
+package "adapter.persistence" {
+    class NotificationRepositoryAdapter <<@Component>> {
+        - jpaRepository: NotificationJpaRepository
+        + save(notification: PushNotification): PushNotification
+        + findById(id: UUID): Optional<PushNotification>
+        + updateStatus(id: UUID, status: NotificationStatus): void
+    }
+
+    interface NotificationJpaRepository <<JpaRepository>> {
+        + findById(id: UUID): Optional<PushNotification>
+    }
+}
+
+package "adapter.fcm" {
+    class FcmService <<@Component>> {
+        - firebaseMessaging: FirebaseMessaging
+        + send(token: String, title: String, body: String): String
+    }
+}
+
+' Relacionamentos
+NotificationController --> SendPushNotificationUseCase : usa
+NotificationController --> MarkNotificationDeliveredUseCase : usa
+NotificationController ..> NotificationRequestDTO : recebe
+NotificationController ..> AckRequestDTO : recebe
+
+SendPushNotificationUseCase --> NotificationRepositoryPort : persiste/atualiza
+SendPushNotificationUseCase --> PushSenderPort : envia push
+
+MarkNotificationDeliveredUseCase --> NotificationRepositoryPort : atualiza status
+
+NotificationRepositoryPort <|.. NotificationRepositoryAdapter : implements
+PushSenderPort <|.. FcmService : implements
+
+NotificationRepositoryAdapter --> NotificationJpaRepository : delega
+NotificationJpaRepository --> PushNotification : gerencia
+
+PushNotification --> NotificationStatus : possui
+
+note right of NotificationController
+  Padrões:
+  - DTO (transferência de dados)
+  - Service Layer (delegação)
+  - Dependency Injection
+end note
+
+note right of SendPushNotificationUseCase
+  Padrões:
+  - Ports & Adapters (Hexagonal)
+  - Single Responsibility
+  - Strategy (PushSenderPort)
+end note
+
+note bottom of FcmService
+  Padrão Adapter:
+  adapta Firebase Admin SDK
+  para a interface PushSenderPort
+end note
+
+note bottom of NotificationRepositoryAdapter
+  Padrão Repository:
+  abstrai acesso a dados via
+  Spring Data JPA
+end note
+@enduml

@@ -1,0 +1,124 @@
+@startuml c4_nivel4_auth
+title Nível 4 - Diagrama de Classes: Módulo de Autenticação (monolith-ui)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+
+package "web.rest" {
+    class AuthenticateController {
+        - authenticationManagerBuilder: AuthenticationManagerBuilder
+        - tokenProvider: JwtEncoder
+        + authorize(loginVM: LoginVM): ResponseEntity<JWTToken>
+    }
+    class AccountResource {
+        - userService: UserService
+        + registerAccount(managedUserVM: ManagedUserVM): void
+        + getAccount(): AdminUserDTO
+        + activateAccount(key: String): void
+    }
+    class LoginVM {
+        - username: String
+        - password: String
+        - rememberMe: Boolean
+    }
+}
+
+package "security" {
+    class SecurityConfiguration <<@Configuration>> {
+        + filterChain(http: HttpSecurity): SecurityFilterChain
+    }
+    class SecurityJwtConfiguration <<@Configuration>> {
+        - jwtKey: String
+        + jwtDecoder(): JwtDecoder
+        + jwtEncoder(): JwtEncoder
+    }
+    class DomainUserDetailsService <<@Service>> {
+        - userRepository: UserRepository
+        + loadUserByUsername(login: String): UserDetails
+    }
+    class SecurityUtils {
+        + {static} getCurrentUserLogin(): Optional<String>
+        + {static} isAuthenticated(): boolean
+    }
+}
+
+package "service" {
+    class UserService <<@Service>> {
+        - userRepository: UserRepository
+        - authorityRepository: AuthorityRepository
+        - passwordEncoder: PasswordEncoder
+        + createUser(dto: AdminUserDTO): User
+        + updateUser(dto: AdminUserDTO): Optional<AdminUserDTO>
+        + deleteUser(login: String): void
+        + getUserWithAuthorities(): Optional<User>
+    }
+    class UserMapper <<MapStruct>> {
+        + userToUserDTO(user: User): UserDTO
+        + userToAdminUserDTO(user: User): AdminUserDTO
+    }
+}
+
+package "service.dto" {
+    class AdminUserDTO {
+        - id: Long
+        - login: String
+        - email: String
+        - authorities: Set<String>
+    }
+}
+
+package "model" {
+    class User <<@Entity>> {
+        - id: Long
+        - login: String
+        - passwordHash: String
+        - email: String
+        - activated: Boolean
+        - authorities: Set<Authority>
+    }
+    class Authority <<@Entity>> {
+        - name: String
+    }
+    abstract class AbstractAuditingEntity {
+        - createdBy: String
+        - createdDate: Instant
+        - lastModifiedBy: String
+        - lastModifiedDate: Instant
+    }
+}
+
+package "repository" {
+    interface UserRepository <<JpaRepository>> {
+        + findOneByLogin(login: String): Optional<User>
+        + findOneByEmailIgnoreCase(email: String): Optional<User>
+    }
+    interface AuthorityRepository <<JpaRepository>> {
+        + findById(name: String): Optional<Authority>
+    }
+}
+
+User --|> AbstractAuditingEntity
+User "*" -- "*" Authority
+
+AuthenticateController --> SecurityJwtConfiguration : usa encoder
+AuthenticateController --> DomainUserDetailsService : autentica
+AccountResource --> UserService
+UserService --> UserRepository
+UserService --> AuthorityRepository
+UserService --> UserMapper
+DomainUserDetailsService --> UserRepository
+UserMapper --> AdminUserDTO
+UserRepository --> User
+AuthorityRepository --> Authority
+
+note right of SecurityConfiguration
+  Padrões: Chain of Responsibility (filtros),
+  Strategy (autenticação JWT vs session)
+end note
+
+note right of UserService
+  Padrões: Facade (orquestra repos),
+  DTO (transferência de dados),
+  Singleton (Spring Bean)
+end note
+@enduml
