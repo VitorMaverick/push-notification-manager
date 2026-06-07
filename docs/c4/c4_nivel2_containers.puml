@@ -1,0 +1,33 @@
+@startuml c4_nivel2_containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Nível 2 - Diagrama de Contêineres
+
+Person(admin, "Administrador", "Gerencia dispositivos e notificações")
+
+System_Boundary(pushSystem, "Push Notification Manager") {
+    Container(frontend, "Frontend UI", "React / Webpack Dev Server", "Interface web SPA para administração. Porta 9060")
+    Container(backend, "Backend API", "Spring Boot / Java 21", "Autenticação JWT, gerenciamento de usuários e proxy para microsserviços. Porta 8080")
+    Container(deviceMs, "Device Service", "Spring Boot / Java 21", "Gerencia cadastro e consulta de dispositivos. Porta 8081")
+    Container(notificationMs, "Notification Service", "Spring Boot / Java 21", "Orquestra envio de notificações push via FCM. Porta 8082")
+    ContainerQueue(rabbitmq, "RabbitMQ", "AMQP 0.9.1", "Message broker para comunicação assíncrona entre microsserviços. Porta 5672")
+    ContainerDb(monolithDb, "Monolith DB", "PostgreSQL 16", "Armazena usuários, authorities e dados de autenticação. Porta 5432")
+    ContainerDb(deviceDb, "Device DB", "PostgreSQL 16", "Armazena dispositivos registrados. Porta 5434")
+    ContainerDb(notificationDb, "Notification DB", "PostgreSQL 16", "Armazena histórico de notificações enviadas. Porta 5433")
+}
+
+System_Ext(firebase, "Firebase Cloud Messaging", "Serviço de push da Google")
+
+Rel(admin, frontend, "Acessa interface web", "HTTPS")
+Rel(frontend, backend, "Chamadas REST", "HTTP/JSON")
+Rel(backend, monolithDb, "Lê/Escreve dados de usuário", "JDBC")
+Rel(backend, deviceMs, "Consulta/Registra dispositivos", "HTTP/REST")
+Rel(backend, notificationMs, "Solicita envio de notificações", "HTTP/REST")
+Rel(deviceMs, deviceDb, "Lê/Escreve dispositivos", "JDBC")
+Rel(deviceMs, rabbitmq, "Publica DeviceRegisteredEvent", "AMQP")
+Rel(notificationMs, notificationDb, "Lê/Escreve notificações", "JDBC")
+Rel(notificationMs, rabbitmq, "Consome eventos de dispositivo", "AMQP")
+Rel(notificationMs, firebase, "Envia mensagem push", "HTTPS/REST")
+
+SHOW_LEGEND()
+@enduml

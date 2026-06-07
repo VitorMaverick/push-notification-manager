@@ -1,0 +1,18 @@
+@startuml c4_nivel1_contexto
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Nível 1 - Diagrama de Contexto do Sistema
+
+Person(admin, "Administrador", "Gerencia dispositivos e envio de notificações push")
+Person(endUser, "Usuário Final", "Recebe notificações push no dispositivo móvel")
+
+System(pushSystem, "Push Notification Manager", "Sistema de gerenciamento de notificações push. Permite cadastrar dispositivos e enviar notificações via FCM.")
+
+System_Ext(firebase, "Firebase Cloud Messaging", "Serviço de push da Google para entrega de mensagens aos dispositivos móveis")
+
+Rel(admin, pushSystem, "Gerencia dispositivos e notificações", "HTTPS")
+Rel(pushSystem, firebase, "Envia notificações push", "HTTPS/REST")
+Rel(firebase, endUser, "Entrega notificação", "Push Protocol")
+
+SHOW_LEGEND()
+@enduml

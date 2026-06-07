@@ -1,0 +1,43 @@
+@startuml c4_nivel3_fluxo_notificacao
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Nível 3 – Componentes do Fluxo de Notificação Push
+
+Person(admin, "Administrador", "Envia notificações push via interface web")
+
+Container_Boundary(frontend, "Frontend (monolith-ui)") {
+    Component(firebaseToken, "FirebaseTokenService", "Firebase SDK", "Solicita token FCM ao navegador")
+    Component(notifSender, "NotificationSender", "React Component", "Envia requisição de push ao notification-ms")
+}
+
+Container_Boundary(notifMs, "Notification Service (porta 8082)") {
+    Component(notifController, "NotificationController", "REST Controller", "POST /api/notifications\nPOST /api/notifications/{id}/ack")
+    Component(sendUseCase, "SendPushNotificationUseCase", "Use Case", "Orquestra envio: persiste, envia via FCM, atualiza status")
+    Component(ackUseCase, "MarkNotificationDeliveredUseCase", "Use Case", "Processa ACK: atualiza status para DELIVERED ou READ")
+    Component(repoAdapter, "NotificationRepositoryAdapter", "JPA Adapter", "Persiste e consulta notificações no banco")
+    Component(fcmService, "FcmService", "FCM Adapter", "Envia mensagem ao Firebase via Admin SDK")
+}
+
+System_Ext(fcm, "Firebase Cloud Messaging", "Serviço de push da Google")
+System_Ext(browser, "Service Worker (Navegador)", "Recebe push e envia ACK")
+ContainerDb(notifDb, "Notification DB", "PostgreSQL 16", "Histórico de notificações")
+
+Rel(admin, firebaseToken, "1. Clica 'Obtain FCM Token'")
+Rel(firebaseToken, browser, "Solicita permissão e token")
+Rel(admin, notifSender, "2. Clica 'Send Notification'")
+Rel(notifSender, notifController, "POST /api/notifications", "HTTP/JSON")
+
+Rel(notifController, sendUseCase, "Delega envio")
+Rel(sendUseCase, repoAdapter, "Persiste (status=PENDING)")
+Rel(sendUseCase, fcmService, "Envia push")
+Rel(fcmService, fcm, "HTTP POST Firebase API v1")
+Rel(sendUseCase, repoAdapter, "Atualiza (status=SENT)")
+
+Rel(fcm, browser, "Entrega via Web Push")
+Rel(browser, notifController, "POST /api/notifications/{id}/ack", "HTTP/JSON")
+Rel(notifController, ackUseCase, "Delega ACK")
+Rel(ackUseCase, repoAdapter, "Atualiza (status=DELIVERED)")
+Rel(repoAdapter, notifDb, "JDBC")
+
+SHOW_LEGEND()
+@enduml

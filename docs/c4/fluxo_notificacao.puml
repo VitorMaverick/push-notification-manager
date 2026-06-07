@@ -1,0 +1,74 @@
+@startuml fluxo_notificacao
+
+skinparam sequenceArrowThickness 1.5
+skinparam sequenceParticipantBorderColor #333333
+skinparam sequenceLifeLineBorderColor #666666
+skinparam sequenceMessageAlign center
+
+title Diagrama de Sequência – Ciclo de Vida de uma Notificação Push
+
+actor "Administrador" as Admin
+participant "Frontend\n(monolith-ui)" as FE
+participant "Notification MS\n(porta 8082)" as NMS
+participant "Firebase\nCloud Messaging" as FCM
+participant "Service Worker\n(Navegador)" as SW
+
+== 1. Obtenção do Token FCM ==
+
+Admin -> FE: Clica em "Obtain FCM Token From Browser"
+activate FE
+FE -> SW: firebase.getToken()\n(solicita permissão ao navegador)
+activate SW
+SW --> FE: Token FCM (string única do dispositivo)
+deactivate SW
+FE -> FE: Armazena token\nno estado local
+FE --> Admin: Exibe token obtido na interface
+deactivate FE
+
+== 2. Envio da Notificação ==
+
+Admin -> FE: Clica em "Send Notification"\n(preenche título e corpo)
+activate FE
+FE -> NMS: POST /api/notifications\n{ "title", "body", "fcmToken" }
+activate NMS
+NMS -> NMS: Persiste notificação\n(status = PENDING)
+NMS -> FCM: HTTP POST (Firebase API v1)\n{ "message": { "token", "notification" } }
+activate FCM
+FCM --> NMS: 200 OK\n{ "name": "projects/.../messages/{message_id}" }
+deactivate FCM
+NMS -> NMS: Atualiza status = SENT
+NMS --> FE: 202 Accepted\n{ "id": notificationId }
+deactivate NMS
+FE --> Admin: Exibe confirmação de envio
+deactivate FE
+
+== 3. Entrega e Confirmação (ACK) ==
+
+FCM -> SW: Entrega notificação push\n(via protocolo Web Push)
+activate SW
+SW -> SW: Exibe notificação\nno sistema operacional
+SW -> NMS: POST /api/notifications/{id}/ack\n{ "status": "delivered", "timestamp": ... }
+activate NMS
+NMS -> NMS: Atualiza status = DELIVERED
+NMS --> SW: 200 OK
+deactivate NMS
+deactivate SW
+
+== 4. Interação do Usuário (opcional) ==
+
+Admin -> SW: Clica na notificação exibida
+activate SW
+SW -> NMS: POST /api/notifications/{id}/ack\n{ "status": "read", "timestamp": ... }
+activate NMS
+NMS -> NMS: Atualiza status = READ
+NMS --> SW: 200 OK
+deactivate NMS
+deactivate SW
+
+note over NMS
+  Nota: O endpoint de confirmação pode ser
+  /api/notifications/{id}/ack ou /api/notifications/{id}/acr
+  conforme a implementação final.
+end note
+
+@enduml

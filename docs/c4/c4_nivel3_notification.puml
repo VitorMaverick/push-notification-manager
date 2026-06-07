@@ -1,0 +1,55 @@
+@startuml c4_nivel3_notification
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Nível 3 - Componentes do Notification Service (Arquitetura Hexagonal)
+
+Container_Boundary(notificationMs, "Notification Service (Spring Boot)") {
+    Component(notifController, "NotificationController", "REST Adapter (Inbound)", "Endpoints REST para envio e consulta de notificações.")
+    Component(restExHandler, "RestExceptionHandler", "ControllerAdvice", "Tratamento global de exceções REST.")
+
+    Component(sendUseCase, "SendPushNotificationUseCase", "Use Case", "Orquestra envio de push: persiste, envia via FCM, atualiza status.")
+    Component(getByIdUseCase, "GetNotificationByIdUseCase", "Use Case", "Busca notificação por ID.")
+    Component(getHistoryUseCase, "GetNotificationHistoryUseCase", "Use Case", "Lista histórico com filtros.")
+    Component(markDeliveredUseCase, "MarkNotificationDeliveredUseCase", "Use Case", "Marca notificação como entregue (ACK do FCM).")
+
+    Component(repoPort, "NotificationRepositoryPort", "Port (Outbound)", "Interface de persistência de notificações.")
+    Component(pushSenderPort, "PushSenderPort", "Port (Outbound)", "Interface de envio push (FCM).")
+    Component(eventPublisherPort, "NotificationEventPublisherPort", "Port (Outbound)", "Interface de publicação de eventos.")
+
+    Component(repoAdapter, "NotificationRepositoryAdapter", "Persistence Adapter", "Implementa repositório com Spring Data JPA.")
+    Component(jpaRepo, "NotificationJpaRepository", "Spring Data JPA", "Interface JPA para NotificationJpaEntity.")
+    Component(fcmService, "FcmService", "FCM Adapter (Outbound)", "Integra com Firebase Admin SDK para envio de push.")
+    Component(rabbitPublisher, "RabbitNotificationEventPublisher", "Messaging Adapter (Outbound)", "Publica eventos de falha no RabbitMQ.")
+
+    Component(deviceConsumer, "DeviceRegisteredConsumer", "Messaging Adapter (Inbound)", "Consome DeviceRegisteredEvent do RabbitMQ.")
+    Component(retryConsumer, "NotificationRetryConsumer", "Messaging Adapter (Inbound)", "Consome eventos de retry para reenvio.")
+
+    Component(secConfig, "SecurityConfiguration", "Config", "Segurança JWT para proteger endpoints.")
+    Component(rabbitConfig, "RabbitMQConfig", "Config", "Configuração de filas, exchanges e bindings.")
+    Component(firebaseConfig, "FirebaseConfig", "Config", "Inicializa FirebaseApp com service account.")
+}
+
+ContainerDb(notifDb, "Notification DB", "PostgreSQL 16", "Histórico de notificações")
+ContainerQueue(rabbitmq, "RabbitMQ", "AMQP", "Eventos de dispositivo e retry")
+System_Ext(firebase, "Firebase Cloud Messaging", "Push delivery")
+
+Rel(notifController, sendUseCase, "Invoca envio")
+Rel(notifController, getByIdUseCase, "Consulta por ID")
+Rel(notifController, getHistoryUseCase, "Lista histórico")
+Rel(notifController, markDeliveredUseCase, "Confirma entrega")
+Rel(sendUseCase, repoPort, "Persiste notificação")
+Rel(sendUseCase, pushSenderPort, "Envia push")
+Rel(sendUseCase, eventPublisherPort, "Publica evento de falha")
+Rel(repoPort, repoAdapter, "Implementado por")
+Rel(repoAdapter, jpaRepo, "Delega para JPA")
+Rel(jpaRepo, notifDb, "JDBC")
+Rel(pushSenderPort, fcmService, "Implementado por")
+Rel(fcmService, firebase, "HTTPS/REST")
+Rel(eventPublisherPort, rabbitPublisher, "Implementado por")
+Rel(rabbitPublisher, rabbitmq, "AMQP")
+Rel(deviceConsumer, rabbitmq, "Consome", "DeviceRegisteredEvent")
+Rel(retryConsumer, rabbitmq, "Consome", "SendNotificationFailedEvent")
+Rel(deviceConsumer, sendUseCase, "Dispara envio para novo dispositivo")
+
+SHOW_LEGEND()
+@enduml

@@ -1,0 +1,47 @@
+@startuml c4_nivel3_fluxo_notificacao_v2
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Nível 3 – Componentes do Fluxo de Notificação (v2 – com melhorias de resiliência)
+
+Person(admin, "Administrador", "Envia notificações push")
+
+Container_Boundary(monolith, "monolith-ui (Gateway)") {
+    Component(corrFilterM, "CorrelationIdFilter", "OncePerRequestFilter", "Gera/propaga X-Correlation-ID\nInjeta no MDC para logs")
+    Component(restTemplate, "RestTemplate", "Spring Bean", "Timeouts: connect=3s, read=5s\nInterceptor propaga Correlation ID")
+}
+
+Container_Boundary(notifMs, "Notification Service (porta 8082)") {
+    Component(corrFilterN, "CorrelationIdFilter", "OncePerRequestFilter", "Captura X-Correlation-ID\nInjeta no MDC")
+    Component(notifController, "NotificationController", "REST Controller", "POST /api/notifications\nPOST /api/notifications/{id}/ack\nRetorna 202 Accepted imediatamente")
+    Component(sendUseCase, "SendPushNotificationUseCase", "Use Case", "Cria notificação com status PENDING")
+    Component(asyncService, "AsyncNotificationService", "@Async @Service", "Processa envio em background\nvia ThreadPool (notificationExecutor)")
+    Component(asyncConfig, "AsyncConfig", "@EnableAsync", "ThreadPool: core=2, max=5, queue=25")
+    Component(fcmService, "FcmService", "FCM Adapter", "Envia ao Firebase via Admin SDK")
+    Component(repoAdapter, "NotificationRepositoryAdapter", "JPA Adapter", "Persiste/atualiza status")
+    Component(ackUseCase, "MarkNotificationDeliveredUseCase", "Use Case", "Processa ACK de entrega")
+}
+
+System_Ext(fcm, "Firebase Cloud Messaging", "Push delivery")
+System_Ext(browser, "Service Worker (Navegador)", "Recebe push e envia ACK")
+ContainerDb(notifDb, "Notification DB", "PostgreSQL", "Notificações")
+
+Rel(admin, corrFilterM, "Requisição HTTP")
+Rel(corrFilterM, restTemplate, "Propaga Correlation ID")
+Rel(restTemplate, corrFilterN, "POST /api/notifications\n(timeout 3s/5s)", "HTTP + X-Correlation-ID")
+
+Rel(corrFilterN, notifController, "Requisição filtrada")
+Rel(notifController, sendUseCase, "Cria PENDING")
+Rel(sendUseCase, repoAdapter, "save(PENDING)")
+Rel(notifController, asyncService, "sendInBackground()\n(retorno imediato ao cliente)")
+Rel(asyncService, fcmService, "send() [thread async]")
+Rel(fcmService, fcm, "HTTP POST Firebase API v1")
+Rel(asyncService, repoAdapter, "save(SENT ou FAILED)")
+
+Rel(fcm, browser, "Web Push")
+Rel(browser, corrFilterN, "POST /ack")
+Rel(notifController, ackUseCase, "Processa ACK")
+Rel(ackUseCase, repoAdapter, "updateStatus(DELIVERED)")
+Rel(repoAdapter, notifDb, "JDBC")
+
+SHOW_LEGEND()
+@enduml
