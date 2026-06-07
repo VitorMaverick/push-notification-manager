@@ -167,6 +167,6 @@ java -jar plantuml.jar -tpng -o ./img *.puml
 
 **Curso:** Bacharelado em Sistemas de Informação
 
-**Orientador:** Prof. Dr. Helder Pereira Borges
+**Orientador:** Prof. Dr. joão Carlos Pinheiro
 
 **Autor:** Vitor Maverick Fonseca dos Santos
