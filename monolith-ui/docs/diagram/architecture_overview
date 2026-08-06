@@ -1,0 +1,144 @@
+Visão geral da arquitetura
+•
+Estilo e princípios: o sistema evoluiu de um monolito JHipster para uma arquitetura híbrida com microsserviços, usando Arquitetura Hexagonal (ports/adapters) e eventos assíncronos (EDA). Referência: README.md (linhas 5, 28–43).
+•
+Serviços e responsabilidades:
+◦
+monolith-ui (gateway + React): autenticação JWT, UI, orquestra chamadas. Porta 8080.
+◦
+device-ms: registro/gestão de dispositivos e tokens FCM. Porta 8081.
+◦
+notification-ms: envio de notificações via Firebase e histórico com retry/DLQ. Porta 8082.
+◦
+RabbitMQ: mensageria para acoplamento fraco e processamento assíncrono.
+◦
+PostgreSQL: bancos separados por serviço (isolar dados/limites de contexto). Ver docker-compose.yml.
+Principais decisões arquiteturais e justificativas
+1)
+Por que RabbitMQ entre device-ms e notification-ms
+•
+Requisitos de desacoplamento e resiliência: o fluxo “registro de device → envio de mensagem de boas-vindas” não deve depender da disponibilidade imediata do notification-ms; a fila assegura armazenamento intermediário e reentrega. Ver publishers/consumers:
+◦
+Publicação: device-ms/.../adapter/messaging/RabbitDeviceEventPublisher.java envia evento DeviceRegisteredEvent ao exchange device.exchange com routing key device.registered (config em device-ms/.../config/RabbitMQConfig.java).
+◦
+Consumo: notification-ms/.../adapter/messaging/DeviceRegisteredConsumer.java com @RabbitListener na fila device.registered.queue (config em notification-ms/.../config/RabbitMQConfig.java).
+•
+Modelagem de topologia simples e rica: RabbitMQ facilita padrões como delay queue, DLQ e roteamento por chave sem infraestrutura adicional. Em notification-ms/.../config/RabbitMQConfig.java há uma topologia de retry explícita:
+◦
+Exchanges: notification.retry.exchange (direct) e device.exchange (topic).
+◦
+Filas: notification.retry.queue (com x-message-ttl = 15s e DLX → retry.process), notification.retry.process.queue (worker), notification.dlq (final). Constantes: RETRY_TTL_MS=15_000, MAX_RETRY_ATTEMPTS=3.
+•
+Simplicidade operacional vs alternativas (Kafka): o volume/taxa e o padrão de uso (comandos/eventos direcionados, reentrega com delay por mensagem) casam melhor com RabbitMQ por sua semântica de filas, TTL e DLX nativos e curva de operação menor. Kafka é excelente para streaming e throughput alto, mas adicionaria complexidade desnecessária aqui.
+•
+Observabilidade e robustez: timeouts, correlação e isolamento por serviço reduzem efeito cascata. O README.md destaca X-Correlation-ID, timeouts HTTP e endpoint assíncrono 202 (linhas 46–49).
+2)
+Por que relacionar Device e Notification pelo token FCM (string) e não por FK
+•
+Limites de serviço/banco: device-ms e notification-ms têm bancos PostgreSQL distintos (ver docker-compose.yml). Uma FK real entre serviços não é possível, e acoplamento via ID interno de outro serviço introduziria dependências fortes e sincronização complicada.
+•
+O token é o endereço de entrega: no domínio de push, o destinatário técnico da mensagem é o recipientToken do FCM. O notification-ms só precisa do token para enviar e para consultas de histórico. Modelar diretamente por token evita “jumps” de resolução (id → token) e reduz chamadas cross-service.
+◦
+Persistência em notification-ms: NotificationJpaEntity possui recipientToken (string), status, fcmMessageId, sentAt/deliveredAt (ver notification-ms/.../adapter/persistence/NotificationJpaEntity.java).
+◦
+Queries filtram por status e fcmToken (ver NotificationJpaRepository.findAllFiltered).
+•
+Separação de preocupações: o cadastro/validade do device é concern do device-ms; o envio e histórico por token é concern do notification-ms. Isso simplifica o modelo do serviço de notificação e elimina a necessidade de sincronizar catálogos de devices.
+•
+Privacidade e minimização de dados: armazenar o mínimo necessário no serviço de notificação (apenas token e metadados da notificação) reduz exposição de dados do device/usuário e facilita cumprir princípios de minimização (importante em auditorias/GDPR).
+•
+Idempotência natural e deduplicação: o device-ms já garante unicidade do token (ver DeviceRepositoryAdapter.existsByFcmToken e exceção DuplicateDeviceTokenException). Como o token é único e é o endereço de entrega, a associação por token mantém a rastreabilidade do histórico por destinatário real.
+•
+Trade-offs e mitigação:
+◦
+Rotação de token: o FCM pode rotacionar tokens. O device-ms precisa atualizar o cadastro; o notification-ms manterá históricos antigos por token antigo. Se desejado mapear histórico “por device lógico”, pode-se propagar um deviceId adicional no evento e armazená-lo como campo secundário (não FK) para agregação, sem romper o isolamento entre bancos.
+◦
+Desnormalização: há cópia do valor do token em múltiplos registros de notificação. Benefícios superam o custo, dado o tamanho pequeno do token e consultas simplificadas.
+3)
+Arquitetura Hexagonal aplicada (ports/adapters)
+•
+Cada serviço expõe casos de uso (domínio) e adaptações a tecnologias externas:
+◦
+device-ms: domínio em .../device/domain/*; persistência JPA em .../adapter/persistence/*; mensageria em .../adapter/messaging/*; REST em .../adapter/rest/*.
+◦
+notification-ms: simétrico, com portas PushSenderPort, NotificationEventPublisherPort e adapters para FCM, JPA e RabbitMQ.
+•
+Benefícios: testabilidade, substituição de tecnologias (ex.: trocar RabbitMQ/FCM), e clareza de limites.
+4)
+Fluxos críticos e ciclo de vida de notificações
+•
+Registro de dispositivo:
+◦
+Frontend obtém fcmToken via Firebase JS SDK (Service Worker). Ver monolith-ui/src/main/webapp/app/firebaseClient.ts e tela DeviceManagement.tsx.
+◦
+Backend device-ms registra token único e publica DeviceRegisteredEvent (contendo deviceId, fcmToken, plataforma). Ver device-ms/.../RegisterDeviceUseCase.java e publisher.
+•
+Envio de boas-vindas e notificações:
+◦
+notification-ms consome o evento e usa SendPushNotificationUseCase para enviar a mensagem de boas-vindas (ver DeviceRegisteredConsumer.java).
+◦
+Notificações seguem estados PENDING → SENT → DELIVERED (o DELIVERED é confirmado via ACK do cliente). Referências: README.md (linhas 132–141) e docs.
+•
+Integração FCM e confirmação de entrega:
+◦
+Texto técnico: monolith-ui/docs/fcm-integration-text.md descreve backend com Admin SDK/HTTP v1, frontend com Service Worker e ACK ao endpoint /api/internal/firebase/ack ao receber a mensagem (linhas 9–22).
+◦
+Diagrama de sequência: monolith-ui/docs/fcm-integration-sequence.svg (mencionado no markdown, linhas 23, 49–51).
+•
+Retry e DLQ (notification-ms):
+◦
+Mensagens com falha são roteadas para notification.retry.queue com TTL (15s) e depois para notification.retry.process.queue para nova tentativa; após MAX_RETRY_ATTEMPTS, podem seguir para notification.dlq. Ver notification-ms/.../config/RabbitMQConfig.java e consumer NotificationRetryConsumer.
+5)
+Comunicação síncrona e assíncrona
+•
+Síncrona (REST): monolith-ui → microsserviços (com timeouts de 3s/5s para evitar bloqueios). Ver README.md (linhas 40, 47).
+•
+Assíncrona (RabbitMQ): device-ms → notification-ms para eventos de domínio. Benefícios: menor acoplamento, resiliência, absorção de pico.
+•
+Endpoint de envio assíncrono: POST /api/notifications retorna 202 Accepted e delega envio a um pool de threads (@Async) para reduzir latência percebida. Ver README.md (linha 48) e notification-ms/.../usecase/AsyncNotificationService.java.
+6)
+Observabilidade e operabilidade
+•
+X-Correlation-ID: propagado em todas as chamadas, inserido no MDC para rastreio fim-a-fim (linhas 46 do README.md).
+•
+Docker Compose: sobe PostgreSQLs isolados, RabbitMQ (com UI em 15672), e os microsserviços. Ver docker-compose.yml e Makefile (linhas que imprimem URLs de saúde/management).
+•
+Scripts e Makefile: make all, make logs-*, start-and-watch-errors.sh para levantar o ecossistema e capturar erros em error_reports/.
+Stack tecnológica
+•
+Backend: Java 21 + Spring Boot 3, Spring Web, Spring Data JPA, Spring AMQP (RabbitMQ), validação, etc.
+•
+Mensageria: RabbitMQ (rabbitmq:3-management), exchanges topic/direct, filas duráveis, TTL e DLX.
+•
+Persistência: PostgreSQL por serviço (device_db, notification_db), JPA/Hibernate.
+•
+Push: Firebase Cloud Messaging (Admin SDK/HTTP v1 do lado do backend; Firebase JS SDK e Service Worker no frontend). Ver monolith-ui/docs/fcm-integration-text.md.
+•
+Frontend: React (JHipster UI), integração com Service Worker para receber e confirmar mensagens.
+Trade-offs e pontos de atenção
+•
+Rotação de FCM tokens: prever atualização em device-ms; histórico em notification-ms permanece por token antigo. Se necessário correlacionar por “usuário” ou “device lógico”, incluir campo auxiliar (ex.: deviceId como string) no evento/entidade sem FK cruzada.
+•
+Idempotência no envio: usar fcmMessageId retornado pelo FCM para evitar duplicidades em reprocessamentos (já persistido em NotificationJpaEntity.fcmMessageId).
+•
+Backpressure e DLQ: monitorar tamanho de filas e taxa de retries; ajustar RETRY_TTL_MS/MAX_RETRY_ATTEMPTS conforme SLAs.
+•
+Segurança de credenciais: service account JSON e chaves VAPID fora do repositório (o doc recomenda Secret Manager; ver fcm-integration-text.md, linhas 31–34).
+Onde encontrar no código (atalhos)
+•
+Topologia RabbitMQ:
+◦
+device-ms: src/main/java/.../config/RabbitMQConfig.java.
+◦
+notification-ms: src/main/java/.../config/RabbitMQConfig.java (retry/DLQ).
+•
+Eventos e mensageria: device-ms/.../adapter/messaging/*, notification-ms/.../adapter/messaging/*.
+•
+Domínio/persistência:
+◦
+Devices: device-ms/.../domain/*, .../adapter/persistence/* (token único, busca por token).
+◦
+Notifications: notification-ms/.../domain/*, .../adapter/persistence/* (campo recipientToken).
+•
+Docs FCM e sequências: monolith-ui/docs/fcm-integration-text.md, monolith-ui/docs/fcm-integration-sequence.svg, monolith-ui/docs/diagram/*.
+Se quiser, posso complementar com um diagrama C4 compacto da solução atual (Context/Container/Component) e um quadro “decisão x consequência” (ADR curto) sobre: RabbitMQ vs Kafka, associação por token vs ID, e o padrão de retry/DLQ adotado.

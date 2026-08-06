@@ -81,6 +81,8 @@ build:
 
 up:
 	@echo "🐳 Subindo contêineres (microsserviços + infra)..."
+	@set -o pipefail; docker compose up -d --remove-orphans || { \
+		echo "✘  Falha ao subir contêineres."; exit 1; }
 	docker compose up -d --remove-orphans 2>&1 | tee /dev/stderr | grep -qi "error" && { echo "✘  Falha ao subir contêineres. Corrija os erros acima."; exit 1; } || true
 	@EXPECTED=$$(docker compose config --services | wc -l); \
 	RUNNING=$$(docker compose ps --status running -q | wc -l); \

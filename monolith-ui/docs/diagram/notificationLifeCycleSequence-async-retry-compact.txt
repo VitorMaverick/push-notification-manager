@@ -1,0 +1,76 @@
+
+    %% Notification lifecycle — async send with summarized retries (compact)
+    %% Keeps original style; minimal changes to show @Async + retry without internals
+
+    # Client request (asynchronous API)
+    Browser->>Controller: POST /api/v1/notifications\n{ token, title, body, data }
+    activate Controller
+
+    Controller->>UseCase: SendPushNotificationCommand(token,title,body,data)
+    activate UseCase
+    UseCase->>Repo: save(notification status=PENDING)
+    activate Repo
+    Repo-->>UseCase: saved(id=..., status=PENDING)
+    deactivate Repo
+
+    %% Handoff to background (@Async)
+    UseCase->>AsyncWorker: dispatch send(notificationId)
+    deactivate UseCase
+    Controller-->>Browser: 202 Accepted\n{ id:..., status:"PENDING" }
+    deactivate Controller
+
+    %% Background send attempt(s)
+    activate AsyncWorker
+    AsyncWorker->>FcmService: sendPushNotification(token,title,body,data)
+    activate FcmService
+    FcmService->>Firebase: send(Message{notification,data,token})
+    activate Firebase
+    alt success
+        Firebase-->>FcmService: messageId (e.g. "fcm-12345")
+        deactivate Firebase
+        FcmService-->>AsyncWorker: messageId
+        deactivate FcmService
+        AsyncWorker->>Repo: update(id, status=SENT, fcmMessageId)
+        activate Repo
+        Repo-->>AsyncWorker: ok
+        deactivate Repo
+    else failure (network/4xx/5xx)
+        deactivate Firebase
+        FcmService-->>AsyncWorker: error(cause)
+        deactivate FcmService
+        note right of AsyncWorker: schedule retry with backoff (TTL ~15s)\nup to MAX_RETRY_ATTEMPTS
+        loop retry until success or attempts exhausted
+            AsyncWorker->>FcmService: retry send(...)
+            FcmService->>Firebase: send(...)
+            alt success on retry
+                Firebase-->>FcmService: messageId
+                FcmService-->>AsyncWorker: messageId
+                AsyncWorker->>Repo: update(status=SENT, fcmMessageId)
+            else still failing
+                Firebase-->>FcmService: error
+                FcmService-->>AsyncWorker: error
+            end
+        end
+        alt exceeded MAX_RETRY_ATTEMPTS
+            AsyncWorker->>Repo: update(id, status=FAILED)
+            note right of AsyncWorker: sent to DLQ for inspection
+        end
+    end
+
+    note over Firebase,Repo: States: PENDING → SENT (fcmMessageId) → DELIVERED (ACK) | FAILED (DLQ)
+
+    %% Delivery and ACK (same style as original, summarized)
+    Firebase-->>SW: push event (payload incl. messageId)
+    activate SW
+    SW->>SW: showNotification(...)
+    SW->>Controller: POST /api/v1/notifications/internal/fcm/ack\n{ messageId, token, receivedAt }
+    activate Controller
+    Controller->>Repo: findByFcmMessageId(messageId)
+    activate Repo
+    Repo-->>Controller: entity
+    Controller->>Repo: update(id, status=DELIVERED, deliveredAt)
+    Repo-->>Controller: ok
+    deactivate Repo
+    Controller-->>SW: 200 OK
+    deactivate Controller
+    deactivate SW

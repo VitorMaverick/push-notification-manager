@@ -26,15 +26,15 @@ public class AsyncNotificationService {
     @Async("notificationExecutor")
     public void sendInBackground(PushNotification notification) {
         try {
-            String messageId = pushSenderPort.send(
-                notification.getFcmToken(),
+            String messageId = pushSenderPort.sendPushNotification(
+                notification.getRecipientToken(),
                 notification.getTitle(),
                 notification.getBody()
             );
-            notification.markAsSent(messageId);
+            notification.markSent(messageId);
             log.info("Notification {} sent successfully, messageId={}", notification.getId(), messageId);
         } catch (Exception e) {
-            notification.markAsFailed();
+            notification.markFailed(e.getMessage());
             log.error("Failed to send notification {}: {}", notification.getId(), e.getMessage());
         } finally {
             repositoryPort.save(notification);

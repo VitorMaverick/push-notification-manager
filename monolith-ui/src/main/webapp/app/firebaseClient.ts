@@ -60,7 +60,7 @@ export function onFcmMessage(listener: (payload: any) => void) {
     return;
   }
   fcmListenerRegistered = true;
-  onMessage(messaging, payload => {
+  onMessage(messaging, (payload: any) => {
     // Always log the payload first so the 'Foreground message' appears in console/logs
     try {
       // keep developer-friendly debug log
@@ -86,7 +86,7 @@ export function onFcmMessage(listener: (payload: any) => void) {
         }
 
         // send ack to backend (non-blocking)
-        const rawNotificationId = (payload as any)?.data?.notificationId;
+        const rawNotificationId = payload?.data?.notificationId;
         const notificationId = rawNotificationId ? Number(rawNotificationId) : null;
         if (notificationId) {
           fetch(`${NOTIFICATION_SERVICE_URL}/api/v1/notifications/ack`, {

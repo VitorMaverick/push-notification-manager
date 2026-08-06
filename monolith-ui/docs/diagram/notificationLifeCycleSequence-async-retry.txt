@@ -1,0 +1,100 @@
+
+    %% Notification lifecycle with async send and retries (summary)
+    %% Keeps original style, adds @Async flow + RabbitMQ retry/DLQ
+
+    # Client request (asynchronous API)
+    Browser->>Controller: POST /api/v1/notifications\n{ token, title, body, data }
+    activate Controller
+
+    Controller->>UseCase: SendPushNotificationCommand(token,title,body,data)
+    activate UseCase
+    UseCase->>Repo: save(notification status=PENDING)
+    activate Repo
+    Repo-->>UseCase: saved(id=..., status=PENDING)
+    deactivate Repo
+
+    %% Hand-off to background worker/thread pool (@Async)
+    UseCase->>AsyncWorker: dispatch send(taskId, notificationId)
+    deactivate UseCase
+    Controller-->>Browser: 202 Accepted\n{ id:..., status:"PENDING" }
+    deactivate Controller
+
+    %% Background send attempt #1
+    activate AsyncWorker
+    AsyncWorker->>FcmService: sendPushNotification(token,title,body,data)
+    activate FcmService
+    FcmService->>Firebase: send(Message{notification,data,token})
+    activate Firebase
+    alt success
+        Firebase-->>FcmService: messageId "fcm-12345"
+        deactivate Firebase
+        FcmService-->>AsyncWorker: messageId
+        deactivate FcmService
+        AsyncWorker->>Repo: update(id, status=SENT, fcmMessageId)
+        activate Repo
+        Repo-->>AsyncWorker: ok
+        deactivate Repo
+    else failure (network/4xx/5xx)
+        deactivate Firebase
+        FcmService-->>AsyncWorker: error(cause)
+        deactivate FcmService
+        note right of AsyncWorker: schedule retry with backoff (TTL=15s)
+        AsyncWorker->>RetryExchange: publish RetryEvent{notificationId, token, attempt=1}
+        deactivate AsyncWorker
+        RetryExchange-->>RetryDelayQueue: route key "retry" (TTL 15s)
+        RetryDelayQueue-->>RetryProcessQueue: DLX -> "retry.process"
+
+        %% Retry consumer flow (could repeat)
+        activate RetryConsumer
+        RetryProcessQueue-->>RetryConsumer: RetryEvent{attempt=n}
+        RetryConsumer->>FcmService: sendPushNotification(token,title,body,data)
+        activate FcmService
+        FcmService->>Firebase: send(...)
+        activate Firebase
+        alt success on retry
+            Firebase-->>FcmService: messageId
+            deactivate Firebase
+            FcmService-->>RetryConsumer: messageId
+            deactivate FcmService
+            RetryConsumer->>Repo: update(id, status=SENT, fcmMessageId)
+            activate Repo
+            Repo-->>RetryConsumer: ok
+            deactivate Repo
+            deactivate RetryConsumer
+        else still failing and attempt < MAX_RETRY_ATTEMPTS
+            deactivate Firebase
+            FcmService-->>RetryConsumer: error
+            deactivate FcmService
+            note right of RetryConsumer: requeue with attempt+1
+            RetryConsumer->>RetryExchange: publish RetryEvent{attempt+1}
+            deactivate RetryConsumer
+        else exceeded MAX_RETRY_ATTEMPTS
+            deactivate Firebase
+            FcmService-->>RetryConsumer: error
+            deactivate FcmService
+            RetryConsumer->>DLQ: route "retry.dlq"
+            RetryConsumer->>Repo: update(id, status=FAILED)
+            activate Repo
+            Repo-->>RetryConsumer: ok
+            deactivate Repo
+            deactivate RetryConsumer
+        end
+    end
+
+    note over Firebase,Repo: Notification states: PENDING → SENT (fcmMessageId) → DELIVERED (ACK) or FAILED (DLQ)
+
+    %% Delivery and ACK (unchanged from original, summarized)
+    Firebase-->>SW: push event (payload incl. fcmMessageId)
+    activate SW
+    SW->>SW: showNotification(...)
+    SW->>Controller: POST /api/v1/notifications/internal/fcm/ack\n{ messageId, token, receivedAt }
+    activate Controller
+    Controller->>Repo: findByFcmMessageId(messageId)
+    activate Repo
+    Repo-->>Controller: entity
+    Controller->>Repo: update(id, status=DELIVERED, deliveredAt)
+    Repo-->>Controller: ok
+    deactivate Repo
+    Controller-->>SW: 200 OK
+    deactivate Controller
+    deactivate SW
